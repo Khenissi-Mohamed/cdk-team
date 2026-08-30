@@ -21,7 +21,7 @@ const coursSchema = new mongoose.Schema(
     // Décide de la couleur de la case dans la grille et de la légende.
     type: {
       type: String,
-      enum: ["gi", "nogi", "kids", "competition", "openmat"],
+      enum: ["gi", "nogi", "lutte", "kids", "competition", "openmat"],
       required: true,
     },
 

@@ -36,6 +36,7 @@ export default {
   typesCours: [
     { value: "gi", label: "Gi", couleur: "var(--primary)" },
     { value: "nogi", label: "No-gi", couleur: "var(--primary)" },
+    { value: "lutte", label: "Lutte", couleur: "var(--neutral-100)" },
     { value: "kids", label: "Kids", couleur: "var(--brand-600)" },
     { value: "competition", label: "Compétition", couleur: "var(--neutral-100)" },
     { value: "openmat", label: "Open mat", couleur: "var(--brand-600)" },

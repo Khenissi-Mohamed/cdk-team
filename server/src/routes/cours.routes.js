@@ -4,7 +4,7 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
-const TYPES = ["gi", "nogi", "kids", "competition", "openmat"];
+const TYPES = ["gi", "nogi", "lutte", "kids", "competition", "openmat"];
 
 /**
  * Champs que l'admin peut écrire, et rien d'autre. Whitelist explicite plutôt

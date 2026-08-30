@@ -21,6 +21,7 @@ const CLAIR = "#f5f3f0";
 const LIBELLES_TYPE = {
   gi: "Gi",
   nogi: "No-gi",
+  lutte: "Lutte",
   kids: "Kids",
   competition: "Compétition",
   openmat: "Open mat",
