@@ -6,5 +6,7 @@ export async function connectDb() {
 
   mongoose.set("strictQuery", true);
   await mongoose.connect(uri);
-  console.log(`[db] connecté à ${uri}`);
+  // Ne jamais journaliser l'URI : elle contient les identifiants MongoDB en
+  // production et les logs Docker sont lisibles par les opérateurs du VPS.
+  console.log("[db] connexion MongoDB établie.");
 }
