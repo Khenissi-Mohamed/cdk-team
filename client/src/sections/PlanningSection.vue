@@ -13,6 +13,7 @@ import { ref, computed, watch } from "vue";
 import siteConfig from "../site.config";
 import { trackClick } from "../composables/useTracking";
 import { API_ORIGIN } from "../services/api";
+import { couleurTexteContraste } from "../utils/contrast";
 
 const props = defineProps({
   config: { type: Object, required: true },
@@ -101,8 +102,7 @@ const TYPES = Object.fromEntries(siteConfig.typesCours.map((t) => [t.value, t]))
 
 const couleurDe = (type) => TYPES[type]?.couleur ?? "var(--brand-600)";
 
-/** La compétition prend l'encre sombre : sa case est claire. */
-const encreDe = (type) => (type === "competition" ? "var(--surface)" : "var(--text)");
+const encreDe = (type) => couleurTexteContraste(couleurDe(type));
 
 /** « 07:00 » + 90 min → « 08:30 ». */
 function heureFin(heureDebut, duree) {
