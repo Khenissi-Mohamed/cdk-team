@@ -37,6 +37,7 @@ const form = reactive({
 });
 
 const logo = ref(null);
+const imageHero = ref(null);
 const chiffres = ref([]);
 // Saisi comme une seule zone de texte, une ligne par argument : six champs
 // séparés pour un bandeau défilant seraient pénibles à réordonner.
@@ -48,8 +49,11 @@ const enregistre = ref(false);
 const erreur = ref("");
 const envoiLogo = ref(false);
 const champLogo = ref(null);
+const envoiImageHero = ref(false);
+const champImageHero = ref(null);
 
 const apercuLogo = computed(() => (logo.value ? assetUrl(logo.value) : ""));
+const apercuImageHero = computed(() => (imageHero.value ? assetUrl(imageHero.value) : ""));
 
 function hydrater(data) {
   Object.keys(form).forEach((cle) => {
@@ -63,6 +67,7 @@ function hydrater(data) {
     }
   });
   logo.value = data.logo ?? null;
+  imageHero.value = data.hero?.imageFond ?? null;
   chiffres.value = JSON.parse(JSON.stringify(data.club?.chiffres ?? []));
   marqueeTexte.value = (data.marquee ?? []).join("\n");
 }
@@ -139,6 +144,36 @@ async function retirerLogo() {
   const { data } = await api.delete("/settings/admin/logo");
   logo.value = data.logo;
 }
+
+function choisirImageHero() {
+  champImageHero.value.click();
+}
+
+async function surChoixImageHero(event) {
+  const fichier = event.target.files[0];
+  event.target.value = "";
+  if (!fichier) return;
+
+  envoiImageHero.value = true;
+  erreur.value = "";
+  try {
+    const corps = new FormData();
+    corps.append("image", fichier);
+    const { data } = await api.put("/settings/admin/hero-image", corps, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    imageHero.value = data.hero?.imageFond ?? null;
+  } catch (err) {
+    erreur.value = err.response?.data?.message || "L'image de fond n'a pas pu être envoyée.";
+  } finally {
+    envoiImageHero.value = false;
+  }
+}
+
+async function retirerImageHero() {
+  const { data } = await api.delete("/settings/admin/hero-image");
+  imageHero.value = data.hero?.imageFond ?? null;
+}
 </script>
 
 <template>
@@ -206,6 +241,38 @@ async function retirerLogo() {
         Le titre est affiché sur deux lignes, la seconde en rouge avec l'effet
         de balayage. Deux mots courts fonctionnent mieux qu'une phrase.
       </p>
+      <div class="bloc-image-hero mb-6">
+        <div class="apercu-hero">
+          <img v-if="apercuImageHero" :src="apercuImageHero" alt="Image de fond actuelle" />
+          <span v-else class="apercu-vide">Aucune image de fond</span>
+        </div>
+        <div class="d-flex flex-wrap ga-2 mt-3">
+          <input
+            ref="champImageHero"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            class="d-none"
+            @change="surChoixImageHero"
+          />
+          <v-btn
+            color="primary"
+            prepend-icon="mdi-image-plus"
+            :loading="envoiImageHero"
+            @click="choisirImageHero"
+          >
+            {{ imageHero ? "Remplacer l'image" : "Ajouter une image" }}
+          </v-btn>
+          <v-btn
+            v-if="imageHero"
+            variant="text"
+            color="error"
+            prepend-icon="mdi-delete-outline"
+            @click="retirerImageHero"
+          >
+            Retirer
+          </v-btn>
+        </div>
+      </div>
       <v-text-field v-model="form.hero.surtitre" label="Surtitre" class="mb-2" />
       <div class="d-flex ga-3">
         <v-text-field v-model="form.hero.titre" label="Titre — 1re ligne" class="flex-grow-1" />
@@ -398,6 +465,23 @@ async function retirerLogo() {
 .apercu-vide {
   font-size: 0.76rem;
   color: #8b8d93;
+}
+
+.apercu-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  overflow: hidden;
+  background: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.apercu-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .ligne-chiffre {

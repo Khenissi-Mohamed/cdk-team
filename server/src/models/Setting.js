@@ -41,6 +41,7 @@ const settingSchema = new mongoose.Schema(
     /* ---------- Section 1 : accroche ---------- */
     hero: {
       type: bloc({
+        imageFond: { type: String, default: null },
         surtitre: { type: String, default: "Jiu-jitsu brésilien" },
         titre: { type: String, default: "Arte" },
         // Deuxième ligne du titre, affichée dans la couleur d'accent.

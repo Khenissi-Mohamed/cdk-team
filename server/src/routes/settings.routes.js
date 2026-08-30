@@ -1,7 +1,13 @@
 import { Router } from "express";
 import Setting from "../models/Setting.js";
 import { requireAuth } from "../middleware/auth.js";
-import { upload, storeLogo, deleteStoredFile, erreursUpload } from "../middleware/upload.js";
+import {
+  upload,
+  processAndStore,
+  storeLogo,
+  deleteStoredFile,
+  erreursUpload,
+} from "../middleware/upload.js";
 
 const router = Router();
 
@@ -123,6 +129,27 @@ router.delete("/admin/logo", requireAuth, async (req, res) => {
   const settings = await getOrCreateSettings();
   await deleteStoredFile(settings.logo);
   settings.logo = null;
+  await settings.save();
+  res.json(settings);
+});
+
+/* --- Image de fond du Hero --- */
+router.put("/admin/hero-image", requireAuth, upload.single("image"), async (req, res) => {
+  const settings = await getOrCreateSettings();
+  if (!req.file) return res.status(400).json({ message: "Aucune image envoyée." });
+
+  const nouvelleImage = await processAndStore(req.file.buffer, "hero", 2200);
+  await deleteStoredFile(settings.hero.imageFond);
+  settings.hero.imageFond = nouvelleImage;
+  await settings.save();
+
+  res.json(settings);
+});
+
+router.delete("/admin/hero-image", requireAuth, async (req, res) => {
+  const settings = await getOrCreateSettings();
+  await deleteStoredFile(settings.hero.imageFond);
+  settings.hero.imageFond = null;
   await settings.save();
   res.json(settings);
 });

@@ -7,6 +7,7 @@
  * Le second mot porte l'effet de balayage (`.balayage`, dans `theme.css`).
  */
 import { computed } from "vue";
+import { assetUrl } from "../services/api";
 
 const props = defineProps({
   config: { type: Object, required: true },
@@ -15,6 +16,11 @@ const props = defineProps({
 
 const hero = computed(() => props.data.settings?.hero ?? {});
 const ville = computed(() => props.data.settings?.ville ?? "");
+const imageFond = computed(() => assetUrl(hero.value.imageFond));
+const styleTitre = computed(() => {
+  const longueur = Math.max(hero.value.titre?.length ?? 0, hero.value.titreAccent?.length ?? 0, 4);
+  return { "--hero-scale": `${Math.min(27, 108 / longueur)}vw` };
+});
 
 // Le surtitre porte la ville quand elle est renseignée : c'est la première
 // question que se pose un visiteur qui découvre le club.
@@ -25,28 +31,37 @@ const surtitre = computed(() =>
 
 <template>
   <section :id="config.id" class="hero">
+    <div
+      v-if="imageFond"
+      class="hero-image"
+      :style="{ backgroundImage: `url(${imageFond})` }"
+      aria-hidden="true"
+    ></div>
     <span class="halo" aria-hidden="true"></span>
 
-    <div class="wrap hero-contenu">
-      <p v-if="surtitre" v-reveal="'fade'" class="hero-surtitre">
-        <span class="tiret" aria-hidden="true"></span>{{ surtitre }}
-      </p>
+    <div class="wrap">
+      <div class="hero-contenu">
+        <p v-if="surtitre" v-reveal="'fade'" class="hero-surtitre">
+          <span class="tiret" aria-hidden="true"></span>{{ surtitre }}
+        </p>
 
-      <h1 v-reveal="{ variant: 'up', delay: 120 }" class="hero-titre">
-        {{ hero.titre }}<br /><span class="balayage">{{ hero.titreAccent }}</span>
-      </h1>
+        <h1 v-reveal="{ variant: 'up', delay: 120 }" class="hero-titre" :style="styleTitre">
+          <span class="ligne-titre">{{ hero.titre }}</span>
+          <span class="ligne-titre balayage">{{ hero.titreAccent }}</span>
+        </h1>
 
-      <p v-reveal="{ variant: 'up', delay: 300 }" class="hero-texte">{{ hero.texte }}</p>
+        <p v-reveal="{ variant: 'up', delay: 300 }" class="hero-texte">{{ hero.texte }}</p>
 
-      <div v-reveal="{ variant: 'up', delay: 420 }" class="hero-actions">
-        <a class="bouton-plein" href="#inscription">
-          {{ hero.ctaPrincipal }}
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14m0 0-5-5m5 5-5 5" /></svg>
-        </a>
-        <a class="bouton-vide" href="#planning">
-          {{ hero.ctaSecondaire }}
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14m0 0 5-5m-5 5-5-5" /></svg>
-        </a>
+        <div v-reveal="{ variant: 'up', delay: 420 }" class="hero-actions">
+          <a class="bouton-plein" href="#inscription">
+            {{ hero.ctaPrincipal }}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14m0 0-5-5m5 5-5 5" /></svg>
+          </a>
+          <a class="bouton-vide" href="#planning">
+            {{ hero.ctaSecondaire }}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14m0 0 5-5m-5 5-5-5" /></svg>
+          </a>
+        </div>
       </div>
     </div>
   </section>
@@ -60,6 +75,26 @@ const surtitre = computed(() =>
   /* Remonte sous l'en-tête fixe : le halo passe derrière lui. */
   margin-top: calc(var(--header-height) * -1);
   padding-top: calc(var(--header-height) + var(--space-section)) !important;
+}
+
+.hero-image {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-position: center;
+  background-size: cover;
+}
+
+.hero-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 11, 0.72);
+}
+
+.hero > .wrap {
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* Un halo unique et très large, plutôt qu'un dégradé décoratif : donne de la
@@ -79,6 +114,7 @@ const surtitre = computed(() =>
 .hero-contenu {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 1.25rem;
 }
 
@@ -104,17 +140,30 @@ const surtitre = computed(() =>
 
 .hero-titre {
   margin: 0;
-  font-size: var(--size-hero);
-  line-height: 0.82;
+  width: 100%;
+  padding: 0.04em 0 0.1em;
+  font-size: clamp(4rem, var(--hero-scale), 10rem);
+  line-height: 0.86;
   letter-spacing: -0.03em;
+  text-align: center;
+}
+
+.ligne-titre {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  text-align: center;
 }
 
 .hero-texte {
   margin: 0;
+  width: 100%;
+  max-width: 32ch;
   font-size: 1.06rem;
   line-height: 1.5;
   color: var(--neutral-300);
-  max-width: 32ch;
+  text-align: center;
 }
 
 .hero-actions {
@@ -122,6 +171,9 @@ const surtitre = computed(() =>
   flex-direction: column;
   gap: 0.6rem;
   margin-top: 0.4rem;
+  align-self: stretch;
+  width: 100%;
+  max-width: 610px;
 }
 
 @media (min-width: 620px) {
