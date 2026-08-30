@@ -29,14 +29,18 @@ services:
 
   mongo:
     image: mongo:7
+    ports:
+      # Accès d'administration via tunnel SSH uniquement. La liaison à
+      # 127.0.0.1 empêche toute connexion directe depuis Internet.
+      - "127.0.0.1:27018:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
       - mongo_data:/data/db
     restart: unless-stopped
-    # pas de port publié : accessible uniquement depuis le réseau interne
-    # compose, via le nom de service "mongo" (voir MONGO_URI dans .env)
+    # Le serveur applicatif continue d'utiliser le réseau interne Compose via
+    # le nom de service "mongo" (voir MONGO_URI dans .env).
 
 volumes:
   mongo_data:
