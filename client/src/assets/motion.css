@@ -1,0 +1,201 @@
+/**
+ * Couche mouvement — les états CSS que pilotent les directives de `src/motion/`.
+ *
+ * Le JS ne fait que poser `data-reveal`, `data-parallax` et la classe
+ * `.is-revealed`. Toute l'esthétique du mouvement (distance, durée, courbe) est
+ * décrite ici et s'ajuste par les tokens, sans retoucher une ligne de JS.
+ *
+ * Pas de `will-change` sur les révélations : il y en a des dizaines par page et
+ * cela forcerait autant de couches de composition. `opacity` et `transform`
+ * sont déjà pris en charge par le compositeur.
+ */
+
+:root {
+  /* Mobile d'abord : sur un petit écran une entrée de 2,2 rem paraît molle et
+     rallonge la page. On monte la distance seulement quand il y a la place. */
+  --reveal-distance: 1.4rem;
+  --reveal-distance-x: 1.6rem;
+}
+
+@media (min-width: 720px) {
+  :root {
+    --reveal-distance: 2.2rem;
+    --reveal-distance-x: 2.6rem;
+  }
+}
+
+/* ---------- Révélation ---------- */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(var(--reveal-x, 0), var(--reveal-y, var(--reveal-distance)), 0)
+    scale(var(--reveal-scale, 1));
+  filter: blur(var(--reveal-blur, 0));
+  transition: opacity var(--motion-slow) var(--ease-out) var(--reveal-delay, 0ms),
+    transform var(--motion-slow) var(--ease-out) var(--reveal-delay, 0ms),
+    filter var(--motion-slow) var(--ease-out) var(--reveal-delay, 0ms);
+}
+
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: blur(0);
+}
+
+/* ---------- Cascade (`v-reveal.stagger`) ---------- */
+
+/* Le parent porte `data-reveal-group` et reçoit `.is-revealed` ; ce sont ses
+   enfants directs qui s'animent. Tout est en CSS pour que des enfants arrivés
+   après coup — cas normal quand ils viennent de l'API — soient couverts sans
+   que le JS ait à les re-parcourir. */
+[data-reveal-group] > * {
+  opacity: 0;
+  transform: translate3d(var(--reveal-x, 0), var(--reveal-y, var(--reveal-distance)), 0)
+    scale(var(--reveal-scale, 1));
+  transition: opacity var(--motion-slow) var(--ease-out) var(--reveal-delay, 0ms),
+    transform var(--motion-slow) var(--ease-out) var(--reveal-delay, 0ms);
+}
+
+[data-reveal-group].is-revealed > * {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+/* Le décalage par rang. Au-delà de huit éléments l'attente deviendrait plus
+   longue que l'intérêt de l'effet : tout le reste part avec le huitième. */
+[data-reveal-group] > *:nth-child(1) {
+  --reveal-delay: var(--reveal-group-delay, 0ms);
+}
+[data-reveal-group] > *:nth-child(2) {
+  --reveal-delay: calc(var(--reveal-group-delay, 0ms) + var(--stagger-step));
+}
+[data-reveal-group] > *:nth-child(3) {
+  --reveal-delay: calc(var(--reveal-group-delay, 0ms) + var(--stagger-step) * 2);
+}
+[data-reveal-group] > *:nth-child(4) {
+  --reveal-delay: calc(var(--reveal-group-delay, 0ms) + var(--stagger-step) * 3);
+}
+[data-reveal-group] > *:nth-child(5) {
+  --reveal-delay: calc(var(--reveal-group-delay, 0ms) + var(--stagger-step) * 4);
+}
+[data-reveal-group] > *:nth-child(6) {
+  --reveal-delay: calc(var(--reveal-group-delay, 0ms) + var(--stagger-step) * 5);
+}
+[data-reveal-group] > *:nth-child(7) {
+  --reveal-delay: calc(var(--reveal-group-delay, 0ms) + var(--stagger-step) * 6);
+}
+[data-reveal-group] > *:nth-child(n + 8) {
+  --reveal-delay: calc(var(--reveal-group-delay, 0ms) + var(--stagger-step) * 7);
+}
+
+/* ---------- Variantes d'entrée ---------- */
+
+/* Chaque variante ne redéfinit que ses variables d'entrée. Les groupes sont
+   listés aussi : les enfants héritent des variables posées sur le parent. */
+[data-reveal="up"],
+[data-reveal-group="up"] {
+  --reveal-y: var(--reveal-distance);
+}
+[data-reveal="down"],
+[data-reveal-group="down"] {
+  --reveal-y: calc(var(--reveal-distance) * -1);
+}
+[data-reveal="left"],
+[data-reveal-group="left"] {
+  --reveal-x: calc(var(--reveal-distance-x) * -1);
+  --reveal-y: 0;
+}
+[data-reveal="right"],
+[data-reveal-group="right"] {
+  --reveal-x: var(--reveal-distance-x);
+  --reveal-y: 0;
+}
+[data-reveal="scale"],
+[data-reveal-group="scale"] {
+  --reveal-y: 1rem;
+  --reveal-scale: 0.94;
+}
+[data-reveal="blur"] {
+  --reveal-y: 1rem;
+  --reveal-blur: 12px;
+}
+[data-reveal="fade"],
+[data-reveal-group="fade"] {
+  --reveal-y: 0;
+}
+
+/* Variante « déclencheur » : n'anime rien elle-même, sert uniquement à poser
+   `.is-revealed` pour que des descendants réagissent (cf. SplitText). */
+[data-reveal="trigger"] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition: none;
+}
+
+/* ---------- Parallax ---------- */
+
+[data-parallax] {
+  transform: translate3d(0, var(--parallax-y, 0px), 0);
+  will-change: transform;
+}
+
+/* ---------- Boucles ---------- */
+
+@keyframes marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes soft-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0);
+  }
+}
+
+@keyframes scroll-cue {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 14px, 0);
+    opacity: 0;
+  }
+}
+
+/* ---------- Respect de prefers-reduced-motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-reveal].is-revealed,
+  [data-reveal-group] > *,
+  [data-reveal-group].is-revealed > * {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
+  [data-parallax] {
+    transform: none;
+  }
+
+  /* Les boucles décoratives s'arrêtent, le contenu reste en place. */
+  .marquee-track,
+  .float-slow,
+  .scroll-cue-dot {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,146 @@
+/**
+ * Tokens de design — source unique de vérité du look du site.
+ *
+ * Trois couches, à ne pas mélanger :
+ *   1. PALETTE   — les valeurs brutes de la marque. C'est le SEUL bloc à
+ *                  réécrire pour rhabiller le site.
+ *   2. RÔLES     — ce à quoi sert chaque couleur. Les composants n'utilisent
+ *                  QUE cette couche.
+ *   3. ALIAS     — noms consommés par l'administration. Ne pas supprimer.
+ *
+ * Un composant qui écrit `var(--brand-500)` en dur est un bug : il doit écrire
+ * `var(--primary)`.
+ *
+ * Direction « Ceinture noire » : noir profond, un seul rouge — chirurgical,
+ * jamais en aplat décoratif. Le site public est SOMBRE, l'administration reste
+ * claire : c'est la couche 2 qui porte ce basculement.
+ */
+
+:root {
+  /* ---------- 1. Palette de marque ---------- */
+
+  /* Noirs. Du plus profond (fond de page) au plus clair (bordures). */
+  --brand-900: #0a0a0b;
+  --brand-800: #101012;
+  --brand-700: #17171a;
+  --brand-600: #1f1f22;
+  --brand-500: #2a2a2d;
+
+  /* Le rouge de signal. Il porte du texte blanc à 6,2:1 — au-dessus du
+     minimum AA — donc `--on-primary` reste clair, contrairement à un jaune. */
+  --accent-500: #c1121f;
+  --accent-600: #9d0e19;
+  --accent-ink: #ffffff;
+
+  /* Couleurs de ceinture. Ce ne sont pas des couleurs décoratives : le site
+     DESSINE les grades, et ces valeurs sont celles des ceintures réelles. */
+  --ceinture-blanche: #ece9e2;
+  --ceinture-bleue: #1c4fa1;
+  --ceinture-violette: #6a4fb0;
+  --ceinture-marron: #6b4423;
+  --ceinture-noire: #0f0f11;
+
+  /* Neutres clairs. */
+  --neutral-100: #f5f3f0;
+  --neutral-300: #c4c5c9;
+  --neutral-500: #7d7f85;
+
+  /* Surfaces claires réservées à l'ADMINISTRATION. La basculer en sombre
+     demanderait de reprendre chaque composant Vuetify, pour aucun bénéfice :
+     le gérant y passe, le visiteur non. */
+  --admin-100: #ffffff;
+  --admin-200: #f2f3f4;
+  --admin-300: #e3e5e7;
+
+  /* ---------- 2. Rôles sémantiques ---------- */
+  --surface: var(--brand-900);
+  --surface-alt: var(--brand-800);
+  --surface-deep: var(--brand-700);
+  /* Bandeau « inversé » : sur un site déjà noir, s'en démarquer veut dire
+     monter d'un cran, pas basculer au clair. */
+  --surface-invert: var(--brand-600);
+
+  --text: var(--neutral-100);
+  --text-muted: var(--neutral-500);
+  /* Encre claire, posée sur une photo, un voile sombre ou l'aplat rouge. */
+  --text-invert: var(--neutral-100);
+
+  --primary: var(--accent-500);
+  --primary-strong: var(--accent-600);
+  /* Encre à poser sur un fond `--primary`. Ici du blanc, parce que le rouge
+     le supporte ; sur une marque jaune ce serait du noir. Les composants
+     lisent ce rôle plutôt que de choisir eux-mêmes. */
+  --on-primary: var(--accent-ink);
+  --accent: var(--accent-500);
+
+  /* Couleurs d'état, hors palette de marque : elles doivent rester lisibles
+     comme « erreur » et « réussi » quel que soit le rhabillage. */
+  --error: #ef5350;
+  --success: #66bb6a;
+
+  --border: rgba(245, 243, 240, 0.13);
+  --border-strong: rgba(245, 243, 240, 0.3);
+  --shadow-color: rgba(0, 0, 0, 0.6);
+
+  --elevation-1: 0 10px 22px -14px var(--shadow-color);
+  --elevation-2: 0 20px 34px -22px var(--shadow-color);
+  --elevation-3: 0 34px 60px -28px var(--shadow-color);
+
+  /* ---------- 3. Typographie ---------- */
+  --font-display: "Oswald", "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Archivo", -apple-system, "Segoe UI", sans-serif;
+
+  /* Le titre du hero est calé pour REMPLIR la largeur : en Oswald gras, cinq
+     capitales font environ 2,7 em, donc une colonne de 372 px demande 138 px.
+     C'est ce remplissage bord à bord qui donne le registre affiche. */
+  --size-hero: clamp(3.4rem, 35vw, 9rem);
+  --size-h2: clamp(2rem, 8vw, 3.4rem);
+  --size-h3: clamp(1.2rem, 2vw, 1.5rem);
+  --size-lede: clamp(1.02rem, 1.6vw, 1.2rem);
+  --size-body: 1rem;
+  --size-small: 0.88rem;
+  --size-eyebrow: 0.72rem;
+
+  /* ---------- 4. Espacement & rythme ---------- */
+  --space-section: clamp(2.8rem, 8vw, 6rem);
+  --space-block: clamp(1.4rem, 4vw, 2.4rem);
+  --content-max: 1180px;
+  --content-narrow: 62ch;
+  --gutter: 1.15rem;
+
+  /* ---------- 5. Formes ---------- */
+  /* Registre affiche : des angles francs, aucune rondeur décorative. */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-pill: 999px;
+
+  /* ---------- 6. Mouvement ---------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --motion-fast: 200ms;
+  --motion-base: 420ms;
+  --motion-slow: 820ms;
+  --motion-scene: 1200ms;
+
+  --stagger-step: 85ms;
+
+  /* ---------- 7. Divers ---------- */
+  --header-height: 60px;
+  --z-header: 50;
+  --z-progress: 60;
+  --z-float: 40;
+
+  /* ---------- 8. Alias hérités (administration) ---------- */
+  /* Ces quatre-là habillent l'ADMIN et pointent donc volontairement vers les
+     neutres clairs, pas vers le noir du site public. */
+  --paper: var(--admin-100);
+  --sand: var(--admin-200);
+  --sand-deep: var(--admin-300);
+  --line: rgba(10, 10, 11, 0.12);
+
+  --ink: var(--brand-900);
+  --ink-soft: var(--neutral-500);
+  --shadow: var(--shadow-color);
+}

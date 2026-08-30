@@ -1,0 +1,42 @@
+# Lancer depuis ce dossier (deployment/) : docker compose up -d
+# ou depuis la racine : docker compose -f deployment/docker-compose.yml up -d
+#
+# Le client (site public) n'est volontairement pas un service ici : son
+# build est extrait en dehors de compose et servi par le Nginx du VPS.
+# Voir deploy.sh.
+
+# Nom de projet explicite. Sans lui, Compose le dérive du dossier courant
+# ("deployment"), identique dans conciergerie-djerba et cabinet-sophrologie :
+# les conteneurs et volumes de ces sites seraient écrasés par ceux-ci sur
+# le même VPS.
+name: cdk-team
+
+services:
+  server:
+    build:
+      context: ../server
+    env_file:
+      - .env
+    ports:
+      # loopback uniquement : jamais exposé publiquement, c'est le Nginx
+      # hôte du VPS qui reverse-proxy vers 127.0.0.1:4003
+      - "127.0.0.1:4003:4003"
+    volumes:
+      - ../server/uploads:/app/uploads
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    # pas de port publié : accessible uniquement depuis le réseau interne
+    # compose, via le nom de service "mongo" (voir MONGO_URI dans .env)
+
+volumes:
+  mongo_data:

@@ -1,0 +1,11 @@
+# Les scripts shell et les fichiers lus par Docker/nginx doivent garder des
+# fins de ligne LF, quel que soit le poste qui les édite. Sur un checkout
+# Windows avec core.autocrlf=true, ils ressortiraient en CRLF, et bash refuse
+# alors « set -euo pipefail\r » avec « invalid option name » — panne constatée
+# au premier déploiement.
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.yml           text eol=lf
+*.conf          text eol=lf
+*.example       text eol=lf
+.env*           text eol=lf

@@ -1,0 +1,25 @@
+/*
+ * Oswald en fonte variable (300 → 700) : c'est elle qui porte tout le
+ * caractère du site — titres, chiffres, libellés du planning. Un seul fichier
+ * couvre du surtitre fin au bloc de titre le plus gras.
+ * Sous-ensemble « latin » : le français y tient entièrement.
+ */
+@font-face {
+  font-family: "Oswald";
+  src: url("./fonts/oswald.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+ * Archivo pour le texte courant. Variable également, donc une seule requête
+ * pour le régulier, le demi-gras et le gras.
+ */
+@font-face {
+  font-family: "Archivo";
+  src: url("./fonts/archivo.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}

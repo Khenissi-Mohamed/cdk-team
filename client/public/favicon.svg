@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CDK-Team">
+  <rect width="64" height="64" rx="4" fill="#0a0a0b"/>
+  <rect x="0" y="26" width="64" height="14" fill="#17171a"/>
+  <rect x="40" y="26" width="16" height="14" fill="#c1121f"/>
+  <rect x="45" y="29" width="2" height="8" fill="#f5f3f0"/>
+  <rect x="49" y="29" width="2" height="8" fill="#f5f3f0"/>
+</svg>

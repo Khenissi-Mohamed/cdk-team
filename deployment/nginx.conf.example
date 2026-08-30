@@ -1,0 +1,81 @@
+# Exemple de config à adapter puis copier vers /etc/nginx/sites-available/
+# sur le VPS (ex: /etc/nginx/sites-available/cdk-team), puis :
+#   ln -s /etc/nginx/sites-available/cdk-team /etc/nginx/sites-enabled/
+#   nginx -t && systemctl reload nginx
+#
+# Ne touche à aucun autre fichier/site déjà configuré sur ce Nginx.
+#
+# Remplacer DOMAINE_A_DEFINIR par le sous-domaine réel choisi (ex: cdk-team.team-cdk.fr).
+#
+# certbot --nginx -d DOMAINE_A_DEFINIR ajoutera ensuite automatiquement les
+# directives listen 443 ssl + le renouvellement auto.
+
+server {
+    listen 80;
+    # Indispensable si le domaine a un AAAA : sans ça, les requêtes IPv6
+    # tombent sur le vhost par défaut et le challenge HTTP-01 de certbot
+    # échoue en 404 alors que tout marche en IPv4.
+    listen [::]:80;
+    server_name DOMAINE_A_DEFINIR;
+
+    root /var/www/cdk-team/dist;
+    index index.html;
+
+    # SPA (Vue Router en mode history) : toute route inconnue retombe sur
+    # index.html, sinon un refresh sur /mentions-legales par ex. donne 404.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Assets Vite hashés dans leur nom -> cache long sûr
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # jamais de cache sur index.html : doit toujours pointer vers les
+    # derniers assets après un déploiement
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    location /api/ {
+        # 220 Mo : l'upload de vidéo de chantier passe par ici. La valeur doit
+        # rester au-dessus de VIDEO_MAX_SIZE_MB côté serveur, sinon Nginx coupe
+        # la requête en 413 avant que multer ne puisse répondre proprement.
+        client_max_body_size 220m;
+
+        proxy_pass http://127.0.0.1:4003;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Un upload de 200 Mo sur une connexion de chantier dépasse largement
+        # les 60 s par défaut : sans ça, la requête est coupée en plein transfert.
+        proxy_request_buffering off;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+
+    # Les médias sont servis directement par Nginx, pas reverse-proxyés vers
+    # Node. Le dossier est un bind-mount présent sur l'hôte (voir le volume
+    # ../server/uploads dans docker-compose.yml), Nginx y a donc accès.
+    # C'est déterminant pour la vidéo : les requêtes Range (le seek dans le
+    # lecteur) sont gérées nativement et ne traversent plus le process Node.
+    #
+    # CHEMIN_DU_DEPOT est à remplacer par l'emplacement réel du dépôt sur le
+    # VPS. `./deploy.sh chemins` l'affiche, avec le slash final : sans lui,
+    # `alias` concatène mal et toutes les images ressortent en 404.
+    location /uploads/ {
+        alias CHEMIN_DU_DEPOT/server/uploads/;
+        expires 30d;
+        add_header Cache-Control "public";
+
+        # Un média n'est jamais exécuté : on coupe court à toute tentative
+        # d'upload piégé servi comme du HTML.
+        add_header X-Content-Type-Options "nosniff";
+
+        try_files $uri =404;
+    }
+}

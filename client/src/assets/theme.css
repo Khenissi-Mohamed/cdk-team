@@ -1,0 +1,193 @@
+/**
+ * Styles globaux partagés : typographie, conteneurs, rythme vertical, et les
+ * deux effets visuels signature du site.
+ *
+ * Les valeurs ne sont pas écrites ici mais dans `tokens.css` — ce fichier ne
+ * fait que les appliquer. Il doit donc toujours être importé APRÈS lui.
+ */
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+body,
+.v-application {
+  font-family: var(--font-body) !important;
+  line-height: 1.6;
+}
+
+/* Le site public est noir, l'administration reste claire. Le fond est donc
+   posé sur la page publique et non sur `body` : le thème Vuetify continue de
+   servir l'admin sans conflit. */
+.public-page {
+  background: var(--surface);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Ancres internes : le défilement s'arrête sous l'en-tête fixe. */
+[id] {
+  scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+
+.wrap {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+@media (min-width: 720px) {
+  .wrap {
+    padding: 0 2.5rem;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Effet 1 — le balayage du titre
+ * ------------------------------------------------------------------ *
+ * Une lumière traverse lentement le mot d'accroche. Le dégradé est découpé
+ * PAR le texte (`background-clip: text`), ce qui évite d'ajouter le moindre
+ * élément dans le DOM.
+ *
+ * Le garde `@supports` n'est pas décoratif : sans lui, un navigateur qui
+ * ignore `background-clip: text` afficherait un titre `color: transparent`,
+ * c'est-à-dire un hero vide. Par défaut le mot est simplement rouge ; le
+ * balayage ne s'ajoute que là où il peut fonctionner.
+ */
+.balayage {
+  display: inline-block;
+  color: var(--primary);
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .balayage {
+    color: transparent;
+    background-image: linear-gradient(
+      100deg,
+      var(--primary) 0%,
+      var(--primary) 40%,
+      #ff5f6b 47%,
+      var(--primary) 54%,
+      var(--primary) 100%
+    );
+    background-size: 280% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: balayage 6s var(--ease-in-out) infinite;
+  }
+}
+
+@keyframes balayage {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Effet 2 — la barre de ceinture
+ * ------------------------------------------------------------------ *
+ * Motif signature du site : une ceinture vue de face, sa barrette décalée
+ * comme sur un vrai kimono. Sert de séparateur de sections, et de gabarit au
+ * composant qui affiche le grade des coachs.
+ */
+.ceinture {
+  display: flex;
+  height: 12px;
+  width: 100%;
+  background: var(--ceinture-noire);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.ceinture::after {
+  content: "";
+  display: block;
+  width: 86px;
+  margin-left: auto;
+  margin-right: 18%;
+  background: var(--primary);
+}
+
+/* ------------------------------------------------------------------ *
+ * Rythme des sections
+ * ------------------------------------------------------------------ */
+.public-page main > section {
+  padding: var(--space-section) 0;
+}
+
+.public-page .section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+/* Le numéro de chapitre : c'est lui qui donne le registre éditorial plutôt
+   que « site de club ». */
+.public-page .chapitre {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--primary);
+  flex: none;
+}
+
+.public-page .surtitre {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex: none;
+}
+
+.public-page .filet {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.public-page .section-titre {
+  font-size: var(--size-h2);
+  margin: 0 0 1rem;
+}
+
+.public-page .section-intro {
+  color: var(--text-muted);
+  font-size: var(--size-lede);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Contenu réservé aux lecteurs d'écran. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balayage {
+    animation: none;
+  }
+}

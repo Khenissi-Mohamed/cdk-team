@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Assistant-specific local context must never enter the project history.
+.claude/
+.codex/
+.agents/
+CLAUDE.md
+CODEX.md
+AGENTS.md
