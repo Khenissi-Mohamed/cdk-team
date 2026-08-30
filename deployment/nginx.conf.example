@@ -5,9 +5,7 @@
 #
 # Ne touche à aucun autre fichier/site déjà configuré sur ce Nginx.
 #
-# Remplacer DOMAINE_A_DEFINIR par le sous-domaine réel choisi (ex: cdk-team.team-cdk.fr).
-#
-# certbot --nginx -d DOMAINE_A_DEFINIR ajoutera ensuite automatiquement les
+# certbot --nginx -d team-cdk.fr -d www.team-cdk.fr ajoutera ensuite automatiquement les
 # directives listen 443 ssl + le renouvellement auto.
 
 server {
@@ -16,7 +14,7 @@ server {
     # tombent sur le vhost par défaut et le challenge HTTP-01 de certbot
     # échoue en 404 alors que tout marche en IPv4.
     listen [::]:80;
-    server_name DOMAINE_A_DEFINIR;
+    server_name team-cdk.fr www.team-cdk.fr;
 
     root /var/www/cdk-team/dist;
     index index.html;
@@ -68,7 +66,7 @@ server {
     # VPS. `./deploy.sh chemins` l'affiche, avec le slash final : sans lui,
     # `alias` concatène mal et toutes les images ressortent en 404.
     location /uploads/ {
-        alias CHEMIN_DU_DEPOT/server/uploads/;
+        alias /opt/cdk-team/server/uploads/;
         expires 30d;
         add_header Cache-Control "public";
 
