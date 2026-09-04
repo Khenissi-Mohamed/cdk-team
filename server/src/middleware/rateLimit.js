@@ -38,6 +38,16 @@ export const limiteurLogin = limiteur({
   message: "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
 });
 
+// Changement de mot de passe : il faut déjà être connecté, mais c'est le mot
+// de passe ACTUEL qu'on y vérifie — sans plafond, une session laissée ouverte
+// servirait à le deviner tranquillement. Seau séparé de celui du login pour
+// qu'une faute de frappe ici ne mange pas les tentatives de connexion.
+export const limiteurMotDePasse = limiteur({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  message: "Trop de tentatives. Réessayez dans quelques minutes.",
+});
+
 // Tracking de clics : généreux, un visiteur légitime peut cliquer plusieurs
 // canaux. Il s'agit seulement d'empêcher qu'on gonfle les statistiques.
 export const limiteurEvents = limiteur({

@@ -77,8 +77,20 @@ function closeOnMobile() {
       />
     </v-list>
 
+    <!-- Le compte est séparé du reste : les entrées ci-dessus modifient le
+         SITE, celle-ci modifie l'accès du gérant. Les mélanger enverrait
+         chercher le mot de passe entre « Tarifs » et « Documents ». -->
     <template #append>
-      <div class="pa-3">
+      <v-divider />
+      <v-list nav density="comfortable">
+        <v-list-item
+          :to="{ name: 'admin-compte' }"
+          prepend-icon="mdi-account-cog-outline"
+          title="Mon compte"
+          @click="closeOnMobile"
+        />
+      </v-list>
+      <div class="px-3 pb-3">
         <v-btn variant="text" block prepend-icon="mdi-logout" @click="handleLogout">
           Déconnexion
         </v-btn>

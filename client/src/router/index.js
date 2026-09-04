@@ -43,6 +43,7 @@ const routes = [
       { path: "tarifs", name: "admin-tarifs", component: () => import("../views/admin/AdminTarifs.vue") },
       { path: "documents", name: "admin-documents", component: () => import("../views/admin/AdminDocuments.vue") },
       { path: "contenu", name: "admin-settings", component: () => import("../views/admin/AdminSettings.vue") },
+      { path: "compte", name: "admin-compte", component: () => import("../views/admin/AdminCompte.vue") },
     ],
   },
 ];
