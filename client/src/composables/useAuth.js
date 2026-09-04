@@ -14,6 +14,19 @@ async function login(identifiant, motDePasse) {
   localStorage.setItem("admin_identifiant", data.identifiant);
 }
 
+/**
+ * Met à jour l'identifiant après un changement depuis « Mon compte ».
+ *
+ * Le jeton, lui, reste valide : il porte l'identifiant technique du compte
+ * (`sub`), pas l'adresse. Inutile donc de reconnecter le gérant — mais le
+ * stockage local doit suivre, sinon l'écran de connexion lui repropose son
+ * ANCIENNE adresse à la prochaine session.
+ */
+function setIdentifiant(identifiant) {
+  state.identifiant = identifiant;
+  localStorage.setItem("admin_identifiant", identifiant);
+}
+
 function logout() {
   state.token = null;
   state.identifiant = null;
@@ -26,5 +39,5 @@ function isAuthenticated() {
 }
 
 export function useAuth() {
-  return { state: readonly(state), login, logout, isAuthenticated };
+  return { state: readonly(state), login, logout, setIdentifiant, isAuthenticated };
 }

@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import Admin from "../models/Admin.js";
-import { sendResetPasswordEmail } from "../utils/mailer.js";
+import { sendResetPasswordEmail, sendIdentifiantChangeEmail } from "../utils/mailer.js";
 import { requireAuth } from "../middleware/auth.js";
 import { limiteurLogin, limiteurMotDePasse } from "../middleware/rateLimit.js";
 
@@ -14,6 +14,12 @@ const router = Router();
 // bouger ensemble, sinon on finit avec deux exigences différentes selon le
 // chemin emprunté.
 const MOT_DE_PASSE_MIN = 8;
+
+// L'identifiant EST l'adresse qui reçoit les liens de réinitialisation : elle
+// doit donc être une adresse joignable, pas un pseudonyme. Contrôle volontaire-
+// ment permissif — le rôle de cette expression est d'attraper la faute de
+// frappe, pas de rejouer la RFC 5322.
+const FORMAT_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 router.post("/login", limiteurLogin, async (req, res) => {
   const { identifiant, motDePasse } = req.body;
@@ -136,6 +142,60 @@ router.put("/password", limiteurMotDePasse, requireAuth, async (req, res) => {
   await admin.save();
 
   res.json({ message: "Mot de passe mis à jour." });
+});
+
+/**
+ * Changement de l'identifiant de connexion.
+ *
+ * Le mot de passe est exigé, comme pour le changement de mot de passe — et ici
+ * l'enjeu est plus grand encore : cette adresse est celle qui reçoit les liens
+ * de réinitialisation. Sans cette vérification, une session laissée ouverte
+ * permettrait d'y mettre son adresse, de demander un lien « mot de passe
+ * oublié » et de s'approprier le compte. L'ancienne adresse en est prévenue,
+ * pour que le vrai propriétaire l'apprenne.
+ */
+router.put("/identifiant", limiteurMotDePasse, requireAuth, async (req, res) => {
+  const nouvelIdentifiant = String(req.body.identifiant ?? "").toLowerCase().trim();
+  const { motDePasse } = req.body;
+
+  if (!nouvelIdentifiant || !motDePasse) {
+    return res.status(400).json({ message: "Nouvel identifiant et mot de passe requis." });
+  }
+
+  if (!FORMAT_EMAIL.test(nouvelIdentifiant)) {
+    return res.status(400).json({ message: "L'identifiant doit être une adresse e-mail valide." });
+  }
+
+  const admin = await Admin.findById(req.admin.sub);
+  if (!admin) return res.status(404).json({ message: "Compte introuvable." });
+
+  const valide = await bcrypt.compare(motDePasse, admin.motDePasseHash);
+  if (!valide) {
+    return res.status(400).json({ message: "Le mot de passe est incorrect." });
+  }
+
+  const ancienIdentifiant = admin.identifiant;
+  if (ancienIdentifiant === nouvelIdentifiant) {
+    return res.status(400).json({ message: "C'est déjà votre identifiant actuel." });
+  }
+
+  admin.identifiant = nouvelIdentifiant;
+  try {
+    await admin.save();
+  } catch (err) {
+    // 11000 : l'index unique du modèle. Sans ce cas, une adresse déjà prise
+    // ressortirait en 500 « Erreur serveur », qui n'aide personne.
+    if (err.code === 11000) {
+      return res.status(409).json({ message: "Cet identifiant est déjà utilisé." });
+    }
+    throw err;
+  }
+
+  // Volontairement pas attendu par la réponse : un SMTP lent ou en panne ne
+  // doit pas faire croire que le changement a échoué. Il est déjà enregistré.
+  sendIdentifiantChangeEmail(ancienIdentifiant, nouvelIdentifiant);
+
+  res.json({ identifiant: admin.identifiant });
 });
 
 export default router;

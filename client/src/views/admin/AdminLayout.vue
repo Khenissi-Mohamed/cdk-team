@@ -91,7 +91,7 @@ function closeOnMobile() {
         />
       </v-list>
       <div class="px-3 pb-3">
-        <v-btn variant="text" block prepend-icon="mdi-logout" @click="handleLogout">
+        <v-btn variant="text" block color="error" prepend-icon="mdi-logout" @click="handleLogout">
           Déconnexion
         </v-btn>
       </div>
