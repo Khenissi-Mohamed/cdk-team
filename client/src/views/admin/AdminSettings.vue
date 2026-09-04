@@ -546,6 +546,18 @@ async function retirerPosterClub() {
         class="mb-4"
       />
 
+      <!-- La vidéo et l'image partent dès qu'on les choisit, ces trois
+           réglages non : ils suivent le formulaire. Sans cet avertissement on
+           bascule « Lire avec le son », on quitte la page, et rien n'a changé
+           sur le site — c'est exactement ce qui s'est produit. -->
+      <v-alert
+        type="info"
+        variant="tonal"
+        density="compact"
+        class="mb-4"
+        text="Les trois réglages ci-dessous ne s'appliquent qu'après un clic sur « Enregistrer », tout en bas de la page. La vidéo et l'image d'attente, elles, sont envoyées immédiatement."
+      />
+
       <v-switch
         v-model="form.club.video.autoplay"
         color="success"

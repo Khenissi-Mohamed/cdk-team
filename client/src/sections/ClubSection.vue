@@ -163,22 +163,44 @@ const surMedia = computed(() => mode.value === "arriere-plan");
 .mode-arriere-plan {
   position: relative;
   overflow: hidden;
-  /* `isolation` crée le contexte d'empilement : sans lui, les z-index négatifs
-     de la vidéo et du voile passeraient DERRIÈRE le fond de la section et
-     l'image ne se verrait jamais. */
+  /* `isolation` crée le contexte d'empilement de la section : les couches
+     ci-dessous s'ordonnent entre elles sans jamais interférer avec le reste
+     de la page. */
   isolation: isolate;
 }
 
+/* ── L'ORDRE DES COUCHES, ET POURQUOI IL EST ÉCRIT COMME ÇA ──────────────
+ * De bas en haut : vidéo, voile, texte, bouton de son.
+ *
+ * `.fond-video` n'a VOLONTAIREMENT pas de z-index. Un `z-index: -2` ici en
+ * ferait un contexte d'empilement, et tout ce qu'il contient — bouton de son
+ * compris — resterait prisonnier sous le voile : le bouton s'affichait, mais
+ * aucun clic ne l'atteignait. Sans z-index, ses enfants s'ordonnent dans le
+ * contexte de la SECTION, et le bouton peut passer au-dessus.
+ * ──────────────────────────────────────────────────────────────────────── */
 .fond-video {
   position: absolute;
   inset: 0;
-  z-index: -2;
+}
+
+/* Le bouton de son est le seul élément cliquable de la couche de fond : il
+   doit dominer le voile ET la colonne de texte. */
+.mode-arriere-plan .fond-video :deep(.bouton-son) {
+  z-index: 3;
+}
+
+.mode-arriere-plan .wrap {
+  position: relative;
+  z-index: 2;
 }
 
 .voile {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
+  /* Décoratif : sans ça il capte les clics et les sélections de texte de
+     toute la section. */
+  pointer-events: none;
   /* Deux couches qui se multiplient : une horizontale qui protège la colonne
      de texte, calée à gauche, une verticale qui raccorde la section à celles
      d'au-dessus et d'en dessous.
