@@ -2,10 +2,20 @@
 /**
  * L'encadrement. Le grade n'est pas écrit, il est DESSINÉ — voir
  * `CeintureBarre.vue`.
+ *
+ * Deux rendus au choix du gérant (« Contenu du site › Coachs ») :
+ *   - `photo`  : les portraits téléversés, comme à l'origine ;
+ *   - `avatar` : le buste en kimono à la couleur du grade.
+ *
+ * Le choix vaut pour toute la rangée — la panacher donnerait une grille
+ * dépareillée. Un coach sans photo bascule sur son avatar DANS LES DEUX CAS :
+ * c'est ce qui fait disparaître le rectangle vide que laissait l'ancien
+ * rendu, et c'est la raison principale d'avoir dessiné cet avatar.
  */
 import { computed } from "vue";
 import { assetUrl } from "../services/api";
 import CeintureBarre from "../components/public/CeintureBarre.vue";
+import CoachAvatar from "../components/public/CoachAvatar.vue";
 
 const props = defineProps({
   config: { type: Object, required: true },
@@ -14,6 +24,10 @@ const props = defineProps({
 
 const bloc = computed(() => props.data.settings?.coachs ?? {});
 const coachs = computed(() => props.data.coachs ?? []);
+
+const modeAvatar = computed(() => bloc.value.affichage === "avatar");
+
+const afficherPhoto = (coach) => !modeAvatar.value && Boolean(coach.photo);
 </script>
 
 <template>
@@ -30,7 +44,18 @@ const coachs = computed(() => props.data.coachs ?? []);
       <div v-reveal.stagger class="liste">
         <article v-for="coach in coachs" :key="coach._id" class="coach">
           <div class="portrait">
-            <img v-if="coach.photo" :src="assetUrl(coach.photo)" :alt="coach.nom" loading="lazy" />
+            <img
+              v-if="afficherPhoto(coach)"
+              :src="assetUrl(coach.photo)"
+              :alt="coach.nom"
+              loading="lazy"
+            />
+            <CoachAvatar
+              v-else
+              :ceinture="coach.ceinture"
+              :degres="coach.degres"
+              :nom="coach.nom"
+            />
           </div>
           <div class="infos">
             <h3>{{ coach.nom }}</h3>
@@ -79,6 +104,8 @@ const coachs = computed(() => props.data.coachs ?? []);
   flex: none;
   width: 92px;
   aspect-ratio: 3 / 4;
+  /* Ne se voit plus que pendant le chargement d'une photo : sans photo, c'est
+     l'avatar qui occupe toute la case. */
   background: var(--brand-700);
   border: 1px solid var(--border);
   overflow: hidden;

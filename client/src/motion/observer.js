@@ -75,6 +75,62 @@ export function unobserveReveal(el) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Présence à l'écran
+ * ------------------------------------------------------------------ */
+
+/**
+ * Prévient à l'entrée ET à la sortie du viewport, indéfiniment — là où
+ * `observeReveal` est un aller simple qui se désabonne après le premier
+ * passage.
+ *
+ * C'est ce dont un média a besoin : une vidéo doit se lancer quand sa section
+ * arrive, mais surtout se METTRE EN PAUSE quand elle repart. Sans la sortie,
+ * on laisserait tourner un décodeur — et éventuellement du son — sur une
+ * section que plus personne ne regarde.
+ *
+ * Un observer par seuil, partagé par tous les éléments qui le demandent :
+ * `threshold` ne peut pas varier d'un élément à l'autre au sein d'un même
+ * observer, mais les seuils réellement utilisés se comptent sur une main.
+ */
+const inViewCallbacks = new WeakMap();
+const inViewObservers = new Map();
+
+function handleInView(entries) {
+  for (const entry of entries) {
+    const callbacks = inViewCallbacks.get(entry.target);
+    if (!callbacks) continue;
+    if (entry.isIntersecting) callbacks.onEnter?.(entry);
+    else callbacks.onLeave?.(entry);
+  }
+}
+
+function getInViewObserver(seuil) {
+  if (!inViewObservers.has(seuil)) {
+    inViewObservers.set(seuil, new IntersectionObserver(handleInView, { threshold: seuil }));
+  }
+  return inViewObservers.get(seuil);
+}
+
+/**
+ * @param {Element} el
+ * @param {{ onEnter?: Function, onLeave?: Function, seuil?: number }} options
+ *   `seuil` est la fraction de l'élément qui doit être visible. 0.35 convient
+ *   à une section pleine hauteur : elle ne « rentre » qu'une fois vraiment
+ *   engagée à l'écran, pas dès que son premier pixel affleure.
+ * @returns {() => void} désabonnement
+ */
+export function observeInView(el, { onEnter = null, onLeave = null, seuil = 0.35 } = {}) {
+  const observer = getInViewObserver(seuil);
+  inViewCallbacks.set(el, { onEnter, onLeave });
+  observer.observe(el);
+
+  return () => {
+    inViewCallbacks.delete(el);
+    observer.unobserve(el);
+  };
+}
+
+/* ------------------------------------------------------------------ *
  * Parallax
  * ------------------------------------------------------------------ */
 

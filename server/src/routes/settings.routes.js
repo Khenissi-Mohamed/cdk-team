@@ -3,10 +3,13 @@ import Setting from "../models/Setting.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
   upload,
+  uploadVideo,
   processAndStore,
   storeLogo,
   deleteStoredFile,
+  limiteUpload,
   erreursUpload,
+  VIDEO_MAX_MO,
 } from "../middleware/upload.js";
 
 const router = Router();
@@ -67,6 +70,28 @@ function normaliserChiffres(entrees) {
     .filter((c) => c.libelle);
 }
 
+/**
+ * Les drapeaux de la vidéo du club.
+ *
+ * Traités À PART de la boucle `CHAMPS_SECTION`, qui fait `String(...).trim()`
+ * sur tout ce qu'elle touche : un booléen `false` y deviendrait la chaîne
+ * "false", VRAIE en JavaScript, et l'autoplay ne se couperait jamais.
+ *
+ * `fichier` et `poster` sont volontairement absents : ils n'appartiennent
+ * qu'aux routes multipart, comme le logo.
+ */
+const MODES_VIDEO = ["arriere-plan", "bloc", "bandeau"];
+
+function appliquerVideo(video, entree) {
+  if (!entree || typeof entree !== "object") return;
+
+  if (MODES_VIDEO.includes(entree.mode)) video.mode = entree.mode;
+
+  ["autoplay", "son", "boucle"].forEach((champ) => {
+    if (entree[champ] !== undefined) video[champ] = entree[champ] === true;
+  });
+}
+
 /* --- Public --- */
 router.get("/", async (req, res) => {
   res.json(await getOrCreateSettings());
@@ -95,6 +120,15 @@ router.put("/admin", requireAuth, async (req, res) => {
 
   if (req.body.club && Array.isArray(req.body.club.chiffres)) {
     settings.club.chiffres = normaliserChiffres(req.body.club.chiffres);
+  }
+
+  if (req.body.club) appliquerVideo(settings.club.video, req.body.club.video);
+
+  // Même raison que la vidéo : l'énum ne doit pas passer par la moulinette
+  // générique, qui accepterait n'importe quelle chaîne et ferait échouer le
+  // `save()` sur une erreur de validation Mongoose peu parlante.
+  if (["photo", "avatar"].includes(req.body.coachs?.affichage)) {
+    settings.coachs.affichage = req.body.coachs.affichage;
   }
 
   if (Array.isArray(req.body.marquee)) {
@@ -150,6 +184,60 @@ router.delete("/admin/hero-image", requireAuth, async (req, res) => {
   const settings = await getOrCreateSettings();
   await deleteStoredFile(settings.hero.imageFond);
   settings.hero.imageFond = null;
+  await settings.save();
+  res.json(settings);
+});
+
+/* --- Vidéo de la section « le club » ---
+ *
+ * Deux routes plutôt qu'une : le poster est une image, qui passe par sharp,
+ * la vidéo est un flux qu'on écrit tel quel. Les mélanger imposerait de
+ * deviner le rôle de chaque fichier d'après son type.
+ *
+ * `limiteUpload` précède multer pour que le 413 cite la limite des vidéos et
+ * non celle des PDF.
+ */
+router.put(
+  "/admin/club-video",
+  requireAuth,
+  limiteUpload(VIDEO_MAX_MO),
+  uploadVideo.single("video"),
+  async (req, res) => {
+    const settings = await getOrCreateSettings();
+    if (!req.file) return res.status(400).json({ message: "Aucune vidéo envoyée." });
+
+    await deleteStoredFile(settings.club.video.fichier);
+    settings.club.video.fichier = `/uploads/video/${req.file.filename}`;
+    await settings.save();
+
+    res.json(settings);
+  }
+);
+
+router.delete("/admin/club-video", requireAuth, async (req, res) => {
+  const settings = await getOrCreateSettings();
+  await deleteStoredFile(settings.club.video.fichier);
+  settings.club.video.fichier = null;
+  await settings.save();
+  res.json(settings);
+});
+
+router.put("/admin/club-poster", requireAuth, upload.single("image"), async (req, res) => {
+  const settings = await getOrCreateSettings();
+  if (!req.file) return res.status(400).json({ message: "Aucune image envoyée." });
+
+  const nouvelleImage = await processAndStore(req.file.buffer, "video", 1600);
+  await deleteStoredFile(settings.club.video.poster);
+  settings.club.video.poster = nouvelleImage;
+  await settings.save();
+
+  res.json(settings);
+});
+
+router.delete("/admin/club-poster", requireAuth, async (req, res) => {
+  const settings = await getOrCreateSettings();
+  await deleteStoredFile(settings.club.video.poster);
+  settings.club.video.poster = null;
   await settings.save();
   res.json(settings);
 });

@@ -52,8 +52,37 @@ const champLogo = ref(null);
 const envoiImageHero = ref(false);
 const champImageHero = ref(null);
 
+const videoClub = ref(null);
+const posterClub = ref(null);
+const champVideoClub = ref(null);
+const champPosterClub = ref(null);
+const envoiVideoClub = ref(false);
+const envoiPosterClub = ref(false);
+// Une vidéo peut peser des dizaines de mégaoctets : sans pourcentage, le
+// gérant reste une minute devant un bouton qui tourne, sans savoir si ça
+// avance ou si c'est bloqué.
+const progressionVideo = ref(0);
+
 const apercuLogo = computed(() => (logo.value ? assetUrl(logo.value) : ""));
 const apercuImageHero = computed(() => (imageHero.value ? assetUrl(imageHero.value) : ""));
+const apercuVideoClub = computed(() => (videoClub.value ? assetUrl(videoClub.value) : ""));
+const apercuPosterClub = computed(() => (posterClub.value ? assetUrl(posterClub.value) : ""));
+
+const MODES_VIDEO = [
+  { value: "arriere-plan", label: "Arrière-plan plein cadre" },
+  { value: "bloc", label: "Bloc à côté du texte" },
+  { value: "bandeau", label: "Bandeau large sous le texte" },
+];
+
+// Le modèle stocke « photo » ou « avatar », le composant Vuetify manipule un
+// booléen. Un `v-switch` branché directement sur la chaîne enverrait `true`
+// au serveur, qui rejetterait la valeur sans rien dire.
+const coachsEnAvatar = computed({
+  get: () => form.coachs.affichage === "avatar",
+  set: (valeur) => {
+    form.coachs.affichage = valeur ? "avatar" : "photo";
+  },
+});
 
 function hydrater(data) {
   Object.keys(form).forEach((cle) => {
@@ -68,6 +97,13 @@ function hydrater(data) {
   });
   logo.value = data.logo ?? null;
   imageHero.value = data.hero?.imageFond ?? null;
+  videoClub.value = data.club?.video?.fichier ?? null;
+  posterClub.value = data.club?.video?.poster ?? null;
+
+  // Un document enregistré avant l'ajout de la vidéo n'a pas ce sous-objet :
+  // sans ce garde-fou, les `v-model` du bloc vidéo écriraient dans `undefined`.
+  if (!form.club.video) form.club.video = {};
+  if (!form.coachs.affichage) form.coachs.affichage = "photo";
   chiffres.value = JSON.parse(JSON.stringify(data.club?.chiffres ?? []));
   marqueeTexte.value = (data.marquee ?? []).join("\n");
 }
@@ -173,6 +209,74 @@ async function surChoixImageHero(event) {
 async function retirerImageHero() {
   const { data } = await api.delete("/settings/admin/hero-image");
   imageHero.value = data.hero?.imageFond ?? null;
+}
+
+/* --- Vidéo de la section « Le club » --- */
+
+function choisirVideoClub() {
+  champVideoClub.value.click();
+}
+
+async function surChoixVideoClub(event) {
+  const fichier = event.target.files[0];
+  // Vidé tout de suite : sans ça, resélectionner le MÊME fichier après une
+  // erreur ne déclenche aucun `change` et le bouton paraît mort.
+  event.target.value = "";
+  if (!fichier) return;
+
+  envoiVideoClub.value = true;
+  progressionVideo.value = 0;
+  erreur.value = "";
+  try {
+    const corps = new FormData();
+    corps.append("video", fichier);
+    const { data } = await api.put("/settings/admin/club-video", corps, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (e) => {
+        if (e.total) progressionVideo.value = Math.round((e.loaded / e.total) * 100);
+      },
+    });
+    videoClub.value = data.club?.video?.fichier ?? null;
+  } catch (err) {
+    erreur.value = err.response?.data?.message || "La vidéo n'a pas pu être envoyée.";
+  } finally {
+    envoiVideoClub.value = false;
+  }
+}
+
+async function retirerVideoClub() {
+  const { data } = await api.delete("/settings/admin/club-video");
+  videoClub.value = data.club?.video?.fichier ?? null;
+}
+
+function choisirPosterClub() {
+  champPosterClub.value.click();
+}
+
+async function surChoixPosterClub(event) {
+  const fichier = event.target.files[0];
+  event.target.value = "";
+  if (!fichier) return;
+
+  envoiPosterClub.value = true;
+  erreur.value = "";
+  try {
+    const corps = new FormData();
+    corps.append("image", fichier);
+    const { data } = await api.put("/settings/admin/club-poster", corps, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    posterClub.value = data.club?.video?.poster ?? null;
+  } catch (err) {
+    erreur.value = err.response?.data?.message || "L'image d'attente n'a pas pu être envoyée.";
+  } finally {
+    envoiPosterClub.value = false;
+  }
+}
+
+async function retirerPosterClub() {
+  const { data } = await api.delete("/settings/admin/club-poster");
+  posterClub.value = data.club?.video?.poster ?? null;
 }
 </script>
 
@@ -335,6 +439,134 @@ async function retirerImageHero() {
         <v-text-field v-model="chiffre.libelle" label="Libellé" density="compact" hide-details />
         <v-btn icon="mdi-close" variant="text" size="small" aria-label="Retirer" @click="retirerChiffre(index)" />
       </div>
+
+      <v-divider class="my-6" />
+
+      <h3 class="text-subtitle-2 font-weight-bold mb-2">Vidéo d'ambiance</h3>
+      <p class="text-body-2 text-medium-emphasis mb-4">
+        Elle se lance toute seule quand le visiteur arrive sur la section, et se
+        met en pause dès qu'il la dépasse.
+        <strong>Le son, lui, ne peut pas toujours démarrer seul</strong> : les
+        navigateurs l'interdisent tant que le visiteur n'a pas cliqué quelque
+        part sur la page. Dans ce cas la vidéo démarre en silence et un bouton
+        « activer le son » s'affiche dessus. Il n'y a aucun moyen de contourner
+        cette règle, elle vient du navigateur.
+      </p>
+
+      <div class="bloc-media mb-4">
+        <div class="apercu-video">
+          <video v-if="apercuVideoClub" :src="apercuVideoClub" :poster="apercuPosterClub" controls muted />
+          <span v-else class="apercu-vide">Aucune vidéo</span>
+        </div>
+        <div class="d-flex flex-wrap ga-2 mt-3">
+          <input
+            ref="champVideoClub"
+            type="file"
+            accept="video/mp4,video/webm"
+            class="d-none"
+            @change="surChoixVideoClub"
+          />
+          <v-btn
+            color="primary"
+            prepend-icon="mdi-video-plus-outline"
+            :loading="envoiVideoClub"
+            @click="choisirVideoClub"
+          >
+            {{ videoClub ? "Remplacer la vidéo" : "Ajouter une vidéo" }}
+          </v-btn>
+          <v-btn
+            v-if="videoClub"
+            variant="text"
+            color="error"
+            prepend-icon="mdi-delete-outline"
+            @click="retirerVideoClub"
+          >
+            Retirer
+          </v-btn>
+        </div>
+        <v-progress-linear
+          v-if="envoiVideoClub"
+          :model-value="progressionVideo"
+          color="primary"
+          height="6"
+          class="mt-3"
+        />
+        <p class="text-caption text-medium-emphasis mt-2 mb-0">
+          MP4 ou WebM, 80 Mo maximum. Le fichier est servi tel quel : exportez-le
+          déjà compressé, en 1080p au plus. Une vidéo lourde ralentit la page
+          pour tout le monde, y compris sur mobile.
+        </p>
+      </div>
+
+      <div class="bloc-media mb-4">
+        <div class="apercu-poster">
+          <img v-if="apercuPosterClub" :src="apercuPosterClub" alt="Image d'attente actuelle" />
+          <span v-else class="apercu-vide">Aucune image d'attente</span>
+        </div>
+        <div class="d-flex flex-wrap ga-2 mt-3">
+          <input
+            ref="champPosterClub"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            class="d-none"
+            @change="surChoixPosterClub"
+          />
+          <v-btn
+            variant="outlined"
+            prepend-icon="mdi-image-outline"
+            :loading="envoiPosterClub"
+            @click="choisirPosterClub"
+          >
+            {{ posterClub ? "Remplacer l'image d'attente" : "Ajouter une image d'attente" }}
+          </v-btn>
+          <v-btn
+            v-if="posterClub"
+            variant="text"
+            color="error"
+            prepend-icon="mdi-delete-outline"
+            @click="retirerPosterClub"
+          >
+            Retirer
+          </v-btn>
+        </div>
+        <p class="text-caption text-medium-emphasis mt-2 mb-0">
+          Affichée le temps que la vidéo se charge. Sans elle, le visiteur voit
+          un rectangle noir pendant une seconde ou deux.
+        </p>
+      </div>
+
+      <v-select
+        v-model="form.club.video.mode"
+        :items="MODES_VIDEO"
+        item-title="label"
+        item-value="value"
+        label="Rendu de la vidéo"
+        hint="En arrière-plan, le texte passe par-dessus la vidéo avec un voile sombre."
+        persistent-hint
+        class="mb-4"
+      />
+
+      <v-switch
+        v-model="form.club.video.autoplay"
+        color="success"
+        density="compact"
+        hide-details
+        label="Lancer la vidéo automatiquement au scroll"
+      />
+      <v-switch
+        v-model="form.club.video.son"
+        color="success"
+        density="compact"
+        hide-details
+        label="Lire avec le son"
+      />
+      <v-switch
+        v-model="form.club.video.boucle"
+        color="success"
+        density="compact"
+        hide-details
+        label="Lire en boucle"
+      />
     </v-card>
 
     <!-- Sections courtes -->
@@ -354,7 +586,33 @@ async function retirerImageHero() {
     <v-card class="pa-6" variant="flat">
       <h2 class="text-subtitle-1 font-weight-bold mb-4">Coachs</h2>
       <v-text-field v-model="form.coachs.surtitre" label="Surtitre" class="mb-2" />
-      <v-text-field v-model="form.coachs.titre" label="Titre" />
+      <v-text-field v-model="form.coachs.titre" label="Titre" class="mb-6" />
+
+      <h3 class="text-subtitle-2 font-weight-bold mb-2">Affichage des coachs</h3>
+      <p class="text-body-2 text-medium-emphasis mb-4">
+        Le grade reste affiché sous chaque coach dans les deux cas. Un coach
+        sans photo prend de toute façon son avatar : c'est ce qui évite le
+        cadre vide dans la rangée.
+      </p>
+
+      <div class="choix-affichage mb-4">
+        <figure class="vignette" :class="{ actif: !coachsEnAvatar }">
+          <span class="vignette-photo"><v-icon icon="mdi-image-outline" size="28" /></span>
+          <figcaption>Photos</figcaption>
+        </figure>
+        <figure class="vignette" :class="{ actif: coachsEnAvatar }">
+          <span class="vignette-avatar"><v-icon icon="mdi-account-tie-outline" size="28" /></span>
+          <figcaption>Avatars</figcaption>
+        </figure>
+      </div>
+
+      <v-switch
+        v-model="coachsEnAvatar"
+        color="success"
+        density="compact"
+        hide-details
+        :label="coachsEnAvatar ? 'Avatars dessinés à la couleur de ceinture' : 'Photos téléversées'"
+      />
     </v-card>
 
     <v-card class="pa-6" variant="flat">
@@ -482,6 +740,84 @@ async function retirerImageHero() {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Aperçus de la vidéo et de son image d'attente. Même fond sombre que le
+   logo : c'est celui du site public, autant juger le cadrage dessus. */
+.apercu-video,
+.apercu-poster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.apercu-video video,
+.apercu-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.apercu-poster {
+  aspect-ratio: 16 / 7;
+}
+
+.apercu-poster img {
+  object-fit: cover;
+}
+
+/* Deux vignettes côte à côte : le gérant voit ce que le switch change avant
+   de le basculer, plutôt que de deviner d'après un libellé. */
+.choix-affichage {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.vignette {
+  flex: 1;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 0.5rem;
+  border: 1px solid var(--line);
+  font-size: 0.78rem;
+  color: #8b8d93;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.vignette.actif {
+  border-color: var(--primary);
+  color: var(--ink);
+}
+
+.vignette-photo,
+.vignette-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  aspect-ratio: 3 / 4;
+  color: #8b8d93;
+  background: var(--ink);
+}
+
+/* La vignette « avatars » emprunte le rouge de la marque plutôt qu'une
+   couleur de ceinture : celle-ci change d'un coach à l'autre, en figer une
+   ici laisserait croire que le réglage l'impose à tout le monde. */
+.vignette-avatar {
+  color: var(--admin-100);
+  background: linear-gradient(160deg, var(--primary), var(--ink));
+}
+
+.vignette.actif .vignette-photo {
+  color: var(--admin-100);
 }
 
 .ligne-chiffre {
