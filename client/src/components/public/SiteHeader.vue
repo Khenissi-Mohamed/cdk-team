@@ -9,6 +9,7 @@
  * les 60 px de l'en-tête au lieu du viewport, et son contenu était tronqué.
  */
 import { ref, watch, onMounted, onUnmounted, computed } from "vue";
+import { RouterLink } from "vue-router";
 import { assetUrl } from "../../services/api";
 
 const props = defineProps({
@@ -17,6 +18,11 @@ const props = defineProps({
 });
 
 const menuOuvert = ref(false);
+
+// Une entrée de menu vise soit une ancre de la page d'accueil (« #tarifs »),
+// soit une page à part (« /boutique »). La seconde doit passer par le routeur :
+// un <a href> rechargerait tout le site pour changer de page.
+const estRoute = (href) => href.startsWith("/");
 
 const logo = computed(() => (props.settings.logo ? assetUrl(props.settings.logo) : ""));
 const nomClub = computed(() => props.settings.nomClub || "CDK-Team");
@@ -48,7 +54,10 @@ watch(menuOuvert, (ouvert) => {
       </a>
 
       <nav class="liens" aria-label="Navigation principale">
-        <a v-for="item in nav" :key="item.href" :href="item.href">{{ item.label }}</a>
+        <template v-for="item in nav" :key="item.href">
+          <RouterLink v-if="estRoute(item.href)" :to="item.href">{{ item.label }}</RouterLink>
+          <a v-else :href="item.href">{{ item.label }}</a>
+        </template>
       </nav>
 
       <button
@@ -78,16 +87,17 @@ watch(menuOuvert, (ouvert) => {
         <span class="ceinture" aria-hidden="true"></span>
 
         <nav class="panneau-nav">
-          <a
+          <component
+            :is="estRoute(item.href) ? RouterLink : 'a'"
             v-for="(item, index) in nav"
             :key="item.href"
-            :href="item.href"
+            v-bind="estRoute(item.href) ? { to: item.href } : { href: item.href }"
             :style="{ '--item-index': index }"
             @click="menuOuvert = false"
           >
             <span class="index">{{ String(index + 1).padStart(2, "0") }}</span>
             <span class="libelle">{{ item.label }}</span>
-          </a>
+          </component>
         </nav>
 
         <a class="panneau-cta" href="#inscription" @click="menuOuvert = false">S'inscrire</a>

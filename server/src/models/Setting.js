@@ -134,6 +134,24 @@ const settingSchema = new mongoose.Schema(
       default: () => ({}),
     },
 
+    /* ---------- La boutique ---------- */
+    // La boutique a sa propre page ; ces textes servent l'en-tête de la page
+    // ET la bande d'aperçu de l'accueil, qui ne doivent pas se contredire.
+    boutique: {
+      type: bloc({
+        surtitre: { type: String, default: "La boutique" },
+        titre: { type: String, default: "On s'équipe au club." },
+        texte: {
+          type: String,
+          default:
+            "Kimonos, no-gi et ceintures, disponibles au club. Les tailles affichées sont celles réellement en stock — passez les essayer avant d'acheter.",
+        },
+        // Libellé du lien qui mène de l'accueil à la page complète.
+        lien: { type: String, default: "Toute la boutique" },
+      }),
+      default: () => ({}),
+    },
+
     /* ---------- Section 6 : les tarifs ---------- */
     tarifs: {
       type: bloc({

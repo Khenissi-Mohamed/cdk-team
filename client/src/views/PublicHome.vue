@@ -20,6 +20,7 @@ const cours = ref([]);
 const coachs = ref([]);
 const tarifs = ref([]);
 const documents = ref([]);
+const produits = ref([]);
 
 // Contexte unique passé à toutes les sections : une section ne fait jamais son
 // propre appel réseau, sinon l'ordre des sections changerait le nombre de
@@ -30,6 +31,7 @@ const siteData = computed(() => ({
   coachs: coachs.value,
   tarifs: tarifs.value,
   documents: documents.value,
+  produits: produits.value,
 }));
 
 const sections = computed(() =>
@@ -44,18 +46,20 @@ const sections = computed(() =>
 
 onMounted(async () => {
   try {
-    const [reglages, c, co, t, d] = await Promise.all([
+    const [reglages, c, co, t, d, b] = await Promise.all([
       api.get("/settings"),
       api.get("/cours"),
       api.get("/coachs"),
       api.get("/tarifs"),
       api.get("/documents"),
+      api.get("/boutique"),
     ]);
     settings.value = reglages.data;
     cours.value = c.data;
     coachs.value = co.data;
     tarifs.value = t.data;
     documents.value = d.data;
+    produits.value = b.data.produits;
   } catch {
     // API injoignable : les sections vides se masquent d'elles-mêmes plutôt
     // que de laisser une page blanche.

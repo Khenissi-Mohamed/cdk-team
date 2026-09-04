@@ -41,6 +41,7 @@ const CHAMPS_SECTION = {
   club: ["surtitre", "titre", "titreAccent", "texte"],
   planning: ["surtitre", "titre", "badge"],
   coachs: ["surtitre", "titre"],
+  boutique: ["surtitre", "titre", "texte", "lien"],
   tarifs: ["surtitre", "titre", "note"],
   documents: ["surtitre", "titre", "texte"],
   appel: ["titre", "texte", "cta"],

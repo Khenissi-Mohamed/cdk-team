@@ -64,6 +64,12 @@ function closeOnMobile() {
         @click="closeOnMobile"
       />
       <v-list-item
+        :to="{ name: 'admin-boutique' }"
+        prepend-icon="mdi-storefront-outline"
+        title="Boutique"
+        @click="closeOnMobile"
+      />
+      <v-list-item
         :to="{ name: 'admin-documents' }"
         prepend-icon="mdi-file-pdf-box"
         title="Documents"
