@@ -43,3 +43,23 @@ export function couleurTexteContraste(couleurFond) {
   cache.set(couleurFond, couleurTexte);
   return couleurTexte;
 }
+
+const cacheLuminance = new Map();
+
+/**
+ * Luminance relative d'une couleur, de 0 (noir) à 1 (blanc).
+ *
+ * « Noir ou blanc par-dessus ? » ne suffit pas partout : `CoachAvatar` doit
+ * savoir si une ceinture est SI sombre qu'elle se confondrait avec le fond du
+ * site. La noire est aujourd'hui le seul grade concerné, mais la reconnaître
+ * à son nom casserait le jour où un grade s'ajoute — la mesure, elle, tient.
+ */
+export function luminanceCouleur(couleurFond) {
+  if (cacheLuminance.has(couleurFond)) return cacheLuminance.get(couleurFond);
+
+  const rgb = composantesRgb(couleurFond);
+  const valeur = rgb ? luminanceRelative(rgb) : 0;
+
+  cacheLuminance.set(couleurFond, valeur);
+  return valeur;
+}
