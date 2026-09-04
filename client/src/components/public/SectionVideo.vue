@@ -13,10 +13,14 @@
  *   1. si le gérant a demandé le son, on TENTE la lecture sonore ;
  *   2. si le navigateur la refuse, on retombe sur une lecture muette — celle-là
  *      passe toujours — et le bouton de son apparaît ;
- *   3. un clic sur ce bouton EST le geste qui manquait : le son part.
+ *   3. le PREMIER geste du visiteur n'importe où sur la page — un tap, un clic,
+ *      une touche — est le geste qui manquait : on redemande le son à ce
+ *      moment-là, sans rien lui faire viser. Le bouton reste là pour ceux qui
+ *      veulent le couper, ou le rallumer ensuite.
  *
- * Le visiteur qui a déjà cliqué n'importe où avant d'arriver ici n'aura donc
- * rien à faire : l'étape 1 réussit d'elle-même.
+ * Le point 3 est indispensable : sans lui, la seule façon d'avoir du son est
+ * de trouver un bouton de 42 px dans un coin de la section. Le réflexe d'un
+ * visiteur est de toucher l'écran, pas de chercher une icône.
  *
  * Autre conséquence, dans l'autre sens : un son qui démarre seul doit toujours
  * pouvoir être coupé. Le bouton reste donc affiché pendant la lecture sonore.
@@ -103,6 +107,45 @@ async function jouer({ gesteUtilisateur = false } = {}) {
   }
 }
 
+/* ------------------------------------------------------------------ *
+ * Rattrapage au premier geste
+ * ------------------------------------------------------------------ */
+
+let detacherGeste = null;
+
+/**
+ * Le premier geste du visiteur, où qu'il soit sur la page, débloque le son.
+ *
+ * En capture, et sur `pointerdown` plutôt que `click` : on veut passer avant
+ * tout gestionnaire de la page, et un tap sur mobile produit un `pointerdown`
+ * bien avant le `click`.
+ *
+ * Les gestes qui atterrissent DANS ce composant sont laissés à `basculer()` :
+ * sinon un clic sur « Activer le son » démuterait ici puis serait remuté par
+ * le bouton une milliseconde plus tard.
+ */
+async function surGeste(evenement) {
+  if (racine.value?.contains(evenement.target)) return;
+  if (!veutSon.value || sonCoupeParVisiteur.value) return;
+  if (!enLecture.value || sonActif.value) return;
+
+  await jouer({ gesteUtilisateur: true });
+  // Une fois le son obtenu, plus rien à écouter.
+  if (sonActif.value) detacherGeste?.();
+}
+
+function ecouterPremierGeste() {
+  if (detacherGeste) return;
+  const options = { capture: true, passive: true };
+  document.addEventListener("pointerdown", surGeste, options);
+  document.addEventListener("keydown", surGeste, options);
+  detacherGeste = () => {
+    document.removeEventListener("pointerdown", surGeste, options);
+    document.removeEventListener("keydown", surGeste, options);
+    detacherGeste = null;
+  };
+}
+
 function suspendre() {
   const el = lecteur.value;
   if (!el) return;
@@ -127,6 +170,9 @@ function basculer() {
     lecteur.value.muted = true;
     sonActif.value = false;
     sonCoupeParVisiteur.value = true;
+    // Il a demandé le silence : le rattrapage ne doit plus le contredire au
+    // prochain clic.
+    detacherGeste?.();
     return;
   }
 
@@ -150,6 +196,8 @@ onMounted(() => {
   // débuter la vidéo sur une image encore vide.
   desabonnements.push(observeInView(racine.value, { seuil: 0, onEnter: armerSource }));
 
+  if (veutSon.value) ecouterPremierGeste();
+
   if (manuel.value) return;
 
   desabonnements.push(
@@ -164,7 +212,10 @@ onMounted(() => {
   );
 });
 
-onBeforeUnmount(() => desabonnements.forEach((stop) => stop()));
+onBeforeUnmount(() => {
+  desabonnements.forEach((stop) => stop());
+  detacherGeste?.();
+});
 </script>
 
 <template>
@@ -181,10 +232,14 @@ onBeforeUnmount(() => desabonnements.forEach((stop) => stop()));
       @ended="enLecture = false"
     ></video>
 
+    <!-- Étiqueté tant que le son est coupé, réduit à une icône une fois qu'il
+         tourne : c'est à l'état « muet » qu'il faut se faire remarquer, pas à
+         l'état « ça marche ». -->
     <button
       v-if="boutonVisible"
       type="button"
       class="bouton-son"
+      :class="{ 'avec-libelle': !sonActif }"
       :aria-label="libelleBouton"
       :title="libelleBouton"
       @click="basculer"
@@ -201,6 +256,7 @@ onBeforeUnmount(() => desabonnements.forEach((stop) => stop()));
         <path d="M4 9v6h4l5 4V5L8 9H4z" />
         <path d="m17 9 5 6m0-6-5 6" />
       </svg>
+      <span v-if="!sonActif" class="libelle">{{ libelleBouton }}</span>
     </button>
   </div>
 </template>
@@ -230,9 +286,14 @@ onBeforeUnmount(() => desabonnements.forEach((stop) => stop()));
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
+  gap: 0.45rem;
+  min-width: 42px;
   height: 42px;
   padding: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--text-invert);
   /* Voile neutre plutôt qu'un aplat de marque : le bouton se pose sur une
      image quelconque, il doit rester lisible sur clair comme sur sombre. */
@@ -241,6 +302,14 @@ onBeforeUnmount(() => desabonnements.forEach((stop) => stop()));
   backdrop-filter: blur(6px);
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.bouton-son.avec-libelle {
+  padding: 0 0.9rem;
+}
+
+.libelle {
+  white-space: nowrap;
 }
 
 .bouton-son:hover,
