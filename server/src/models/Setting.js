@@ -126,7 +126,7 @@ const settingSchema = new mongoose.Schema(
         surtitre: { type: String, default: "L'encadrement" },
         titre: { type: String, default: "Une ceinture, c'est du temps." },
         // « photo » montre les portraits téléversés, « avatar » les remplace
-        // par le buste en kimono dessiné à la couleur du grade. Le choix vaut
+        // par le nœud de ceinture dessiné à la couleur du grade. Le choix vaut
         // pour toute la rangée : la panacher donnerait une grille dépareillée.
         // Un coach sans photo bascule sur son avatar dans les deux cas.
         affichage: { type: String, enum: ["photo", "avatar"], default: "photo" },

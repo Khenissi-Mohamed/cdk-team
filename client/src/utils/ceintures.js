@@ -1,7 +1,7 @@
 /**
  * Vocabulaire des grades, partagé par tout ce qui DESSINE une ceinture :
  * `CeintureBarre.vue` (la barre sous chaque coach) et `CoachAvatar.vue` (le
- * buste en kimono).
+ * nœud de ceinture affiché à la place d'une photo).
  *
  * Ces deux composants portaient la même table de couleurs et la même règle de
  * barrette. Ajouter un grade en n'en corrigeant qu'un seul est une erreur trop

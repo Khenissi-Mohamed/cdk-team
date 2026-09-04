@@ -5,7 +5,7 @@
  *
  * Deux rendus au choix du gérant (« Contenu du site › Coachs ») :
  *   - `photo`  : les portraits téléversés, comme à l'origine ;
- *   - `avatar` : le buste en kimono à la couleur du grade.
+ *   - `avatar` : le nœud de ceinture dessiné à la couleur du grade.
  *
  * Le choix vaut pour toute la rangée — la panacher donnerait une grille
  * dépareillée. Un coach sans photo bascule sur son avatar DANS LES DEUX CAS :
