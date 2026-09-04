@@ -15,6 +15,7 @@ import MarqueeSection from "./MarqueeSection.vue";
 import ClubSection from "./ClubSection.vue";
 import PlanningSection from "./PlanningSection.vue";
 import CoachsSection from "./CoachsSection.vue";
+import BoutiqueSection from "./BoutiqueSection.vue";
 import TarifsSection from "./TarifsSection.vue";
 import DocumentsSection from "./DocumentsSection.vue";
 import AppelSection from "./AppelSection.vue";
@@ -25,6 +26,7 @@ export const SECTION_TYPES = {
   club: ClubSection,
   planning: PlanningSection,
   coachs: CoachsSection,
+  boutique: BoutiqueSection,
   tarifs: TarifsSection,
   documents: DocumentsSection,
   appel: AppelSection,

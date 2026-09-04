@@ -25,6 +25,7 @@ const form = reactive({
   club: {},
   planning: {},
   coachs: {},
+  boutique: {},
   tarifs: {},
   documents: {},
   appel: {},
@@ -624,6 +625,23 @@ async function retirerPosterClub() {
         density="compact"
         hide-details
         :label="coachsEnAvatar ? 'Avatars dessinés à la couleur de ceinture' : 'Photos téléversées'"
+      />
+    </v-card>
+
+    <v-card class="pa-6" variant="flat">
+      <h2 class="text-subtitle-1 font-weight-bold mb-1">Boutique</h2>
+      <p class="text-body-2 text-medium-emphasis mb-4">
+        Ces textes servent à la fois l'en-tête de la page /boutique et la bande
+        d'aperçu de l'accueil : ils ne peuvent pas se contredire. Les articles
+        eux-mêmes se gèrent dans « Boutique ».
+      </p>
+      <v-text-field v-model="form.boutique.surtitre" label="Surtitre" class="mb-2" />
+      <v-text-field v-model="form.boutique.titre" label="Titre" class="mb-2" />
+      <v-textarea v-model="form.boutique.texte" label="Texte d'introduction" rows="3" class="mb-2" />
+      <v-text-field
+        v-model="form.boutique.lien"
+        label="Libellé du lien depuis l'accueil"
+        placeholder="Toute la boutique"
       />
     </v-card>
 

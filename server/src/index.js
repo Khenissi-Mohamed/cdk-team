@@ -19,6 +19,7 @@ import tarifsRoutes from "./routes/tarifs.routes.js";
 import documentsRoutes from "./routes/documents.routes.js";
 import planningRoutes from "./routes/planning.routes.js";
 import eventsRoutes from "./routes/events.routes.js";
+import boutiqueRoutes from "./routes/boutique.routes.js";
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use("/api/tarifs", tarifsRoutes);
 app.use("/api/documents", documentsRoutes);
 app.use("/api/planning", planningRoutes);
 app.use("/api/events", eventsRoutes);
+app.use("/api/boutique", boutiqueRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

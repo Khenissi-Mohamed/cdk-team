@@ -18,6 +18,7 @@ export default {
     { label: "Planning", href: "#planning" },
     { label: "Coachs", href: "#coachs" },
     { label: "Tarifs", href: "#tarifs" },
+    { label: "Boutique", href: "/boutique" },
   ],
 
   sections: [
@@ -27,7 +28,8 @@ export default {
     { type: "planning", id: "planning", chapitre: "02" },
     { type: "coachs", id: "coachs", chapitre: "03" },
     { type: "tarifs", id: "tarifs", chapitre: "04" },
-    { type: "documents", id: "inscription", chapitre: "05" },
+    { type: "boutique", id: "boutique", chapitre: "05" },
+    { type: "documents", id: "inscription", chapitre: "06" },
     { type: "appel" },
   ],
 
