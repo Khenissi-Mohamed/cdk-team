@@ -7,6 +7,7 @@ import crypto from "node:crypto";
 const UPLOAD_ROOT = path.resolve("uploads");
 
 const PDF_MAX_MO = Number(process.env.PDF_MAX_SIZE_MB || 12);
+const VIDEO_MAX_MO = Number(process.env.VIDEO_MAX_SIZE_MB || 80);
 
 /**
  * Refus imputable à l'appelant. Le gestionnaire d'erreurs global lit
@@ -114,6 +115,50 @@ export const uploadPdf = multer({
 });
 
 /* ------------------------------------------------------------------ *
+ * Vidéos
+ * ------------------------------------------------------------------ */
+
+const VIDEO_MIMES = ["video/mp4", "video/webm"];
+
+/**
+ * Vidéo d'ambiance d'une section. Comme les PDF, elle va DIRECTEMENT sur le
+ * disque : `memoryStorage` chargerait 80 Mo en RAM le temps de l'écriture, et
+ * deux téléversements simultanés suffiraient à faire tomber le conteneur.
+ *
+ * Le fichier n'est ni ré-encodé ni redimensionné — il faudrait ffmpeg dans
+ * l'image Docker pour un gain que l'admin obtient mieux en exportant
+ * proprement. C'est donc à lui de fournir un MP4 raisonnable ; l'interface le
+ * lui dit, et la limite de taille le force.
+ *
+ * L'extension est conservée : Nginx sert `/uploads/` en direct et choisit le
+ * `Content-Type` d'après elle. Un `.bin` ne serait jamais lu par le navigateur.
+ */
+export const uploadVideo = multer({
+  storage: multer.diskStorage({
+    destination: async (req, file, cb) => {
+      const dir = path.join(UPLOAD_ROOT, "video");
+      try {
+        await fs.mkdir(dir, { recursive: true });
+        cb(null, dir);
+      } catch (err) {
+        cb(err);
+      }
+    },
+    filename: (req, file, cb) => {
+      const extension = file.mimetype === "video/webm" ? "webm" : "mp4";
+      cb(null, `${crypto.randomUUID()}.${extension}`);
+    },
+  }),
+  limits: { fileSize: VIDEO_MAX_MO * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!VIDEO_MIMES.includes(file.mimetype)) {
+      return cb(refus("Seules les vidéos MP4 et WebM sont acceptées."));
+    }
+    cb(null, true);
+  },
+});
+
+/* ------------------------------------------------------------------ *
  * Suppression
  * ------------------------------------------------------------------ */
 
@@ -129,6 +174,21 @@ export async function deleteStoredFile(url) {
  * ------------------------------------------------------------------ */
 
 /**
+ * Annonce la limite de taille de la route SUIVANTE, pour que le message de
+ * refus cite le bon nombre. Sans ça, un rejet de vidéo parlerait de la limite
+ * des PDF et enverrait l'admin réduire le mauvais fichier.
+ *
+ * À poser AVANT le middleware multer : une fois la limite dépassée, multer a
+ * déjà interrompu la requête et plus rien de la chaîne ne s'exécute.
+ */
+export function limiteUpload(mo) {
+  return (req, res, next) => {
+    req.limiteMo = mo;
+    next();
+  };
+}
+
+/**
  * Traduit les erreurs de multer. Sans ce middleware, un dépassement de taille
  * remonte en 500 et l'admin n'a aucun moyen de comprendre que son fichier
  * était trop lourd.
@@ -136,11 +196,12 @@ export async function deleteStoredFile(url) {
 export function erreursUpload(err, req, res, next) {
   if (err instanceof multer.MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") {
-      return res.status(413).json({ message: `Fichier trop volumineux (maximum ${PDF_MAX_MO} Mo).` });
+      const limite = req.limiteMo ?? PDF_MAX_MO;
+      return res.status(413).json({ message: `Fichier trop volumineux (maximum ${limite} Mo).` });
     }
     return res.status(400).json({ message: err.message });
   }
   next(err);
 }
 
-export { PDF_MAX_MO };
+export { PDF_MAX_MO, VIDEO_MAX_MO };

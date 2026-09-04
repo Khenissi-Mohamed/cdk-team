@@ -23,6 +23,28 @@ const chiffreSchema = bloc({
   libelle: { type: String, default: "" },
 });
 
+// Vidéo d'ambiance d'une section. Le fichier n'est PAS converti au
+// téléversement (voir `upload.js`) : on stocke donc le chemin tel quel, plus
+// le poster, qui évite le carré noir avant la première image décodée.
+//
+// Les trois drapeaux sont des booléens et non des chaînes : ils traversent le
+// PUT en JSON, pas en multipart, précisément pour ne pas devenir "false".
+const videoSchema = bloc({
+  fichier: { type: String, default: null },
+  poster: { type: String, default: null },
+  // Comment la vidéo occupe la section. Voir `ClubSection.vue`.
+  mode: {
+    type: String,
+    enum: ["arriere-plan", "bloc", "bandeau"],
+    default: "arriere-plan",
+  },
+  autoplay: { type: Boolean, default: true },
+  // Tentative de son. Le navigateur peut la refuser : le composant retombe
+  // alors sur un bouton « activer le son ». Voir `ClubSection.vue`.
+  son: { type: Boolean, default: false },
+  boucle: { type: Boolean, default: true },
+});
+
 const settingSchema = new mongoose.Schema(
   {
     /* ---------- Marque ---------- */
@@ -74,6 +96,7 @@ const settingSchema = new mongoose.Schema(
           default:
             "Le jiu-jitsu se pratique au sol, sans frappe. On y apprend à rester calme quand quelqu'un de plus lourd vous immobilise — et ça, ça se travaille, ça ne se muscle pas.\n\nChez nous, le débutant partage le tapis avec le compétiteur dès le premier soir. C'est comme ça qu'on progresse.",
         },
+        video: { type: videoSchema, default: () => ({}) },
         chiffres: {
           type: [chiffreSchema],
           default: () => [
@@ -102,6 +125,11 @@ const settingSchema = new mongoose.Schema(
       type: bloc({
         surtitre: { type: String, default: "L'encadrement" },
         titre: { type: String, default: "Une ceinture, c'est du temps." },
+        // « photo » montre les portraits téléversés, « avatar » les remplace
+        // par le buste en kimono dessiné à la couleur du grade. Le choix vaut
+        // pour toute la rangée : la panacher donnerait une grille dépareillée.
+        // Un coach sans photo bascule sur son avatar dans les deux cas.
+        affichage: { type: String, enum: ["photo", "avatar"], default: "photo" },
       }),
       default: () => ({}),
     },

@@ -40,6 +40,14 @@
   --ceinture-marron: #6b4423;
   --ceinture-noire: #0f0f11;
 
+  /* Teintes du buste en kimono dessiné à la place d'une photo (CoachAvatar).
+     Ce sont les couleurs d'un gi réel, pas des neutres d'interface : elles
+     doivent rester crédibles même si la marque est rhabillée. */
+  --gi-toile: #e6e1d8;
+  --gi-revers: #c8c1b3;
+  --gi-creux: #131316;
+  --gi-peau: #a2988c;
+
   /* Neutres clairs. */
   --neutral-100: #f5f3f0;
   --neutral-300: #c4c5c9;
