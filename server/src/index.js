@@ -39,7 +39,44 @@ app.use(
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
-app.use(cors({ origin: process.env.CLIENT_URL || true }));
+/**
+ * CORS.
+ *
+ * En production : une seule origine, celle du site, déclarée dans CLIENT_URL.
+ *
+ * En développement : le port de Vite n'est PAS garanti. Il se rabat sur 5174,
+ * 5175, 5176… dès que 5173 est occupé — un serveur de dev oublié suffit, et
+ * ils s'empilent vite. Avec une origine figée, tous les appels échouent alors
+ * sur un message CORS qui ne dit rien du vrai problème : le port a glissé.
+ * Hors production on accepte donc n'importe quel port de localhost, et rien
+ * d'autre.
+ *
+ * `NODE_ENV` vaut « production » dans l'image Docker (voir le Dockerfile) ;
+ * hors conteneur il est absent, ce qui vaut développement.
+ */
+const EN_PRODUCTION = process.env.NODE_ENV === "production";
+const ORIGINE_LOCALE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
+function origineAutorisee(origine, repondre) {
+  // Pas d'en-tête Origin : appel serveur à serveur, curl, sonde de santé. Ce
+  // ne sont pas des requêtes de navigateur, CORS ne les concerne pas.
+  if (!origine) return repondre(null, true);
+
+  if (process.env.CLIENT_URL && origine === process.env.CLIENT_URL) {
+    return repondre(null, true);
+  }
+  if (!EN_PRODUCTION && ORIGINE_LOCALE.test(origine)) {
+    return repondre(null, true);
+  }
+
+  // `false` plutôt qu'une erreur : on n'envoie simplement pas l'en-tête et le
+  // navigateur bloque de lui-même. Lever ici transformerait un refus normal en
+  // 500 dans les journaux, et masquerait les vraies pannes.
+  console.warn(`[cors] origine refusée : ${origine}`);
+  repondre(null, false);
+}
+
+app.use(cors({ origin: origineAutorisee }));
 app.use(express.json());
 app.use("/uploads", express.static(path.resolve("uploads")));
 

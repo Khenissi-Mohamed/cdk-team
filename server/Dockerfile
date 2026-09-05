@@ -7,6 +7,11 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
+# Marque l'image comme production. C'est ce qui referme le CORS sur la seule
+# origine de CLIENT_URL : hors conteneur la variable est absente, et le serveur
+# accepte alors n'importe quel port de localhost pour le développement.
+ENV NODE_ENV=production
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
