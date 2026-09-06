@@ -346,6 +346,11 @@ function fermerMobile() {
   mobileEdition.value = false;
 }
 
+function demanderSuppressionMobile(p) {
+  remplirFiche(p);
+  dialogSuppressionArticle.value = true;
+}
+
 function ajusterStock(p, taille, delta) {
   changerQuantite(p, taille, quantite(p, taille) + delta);
 }
@@ -484,12 +489,16 @@ async function reordonnerPhotos() {
           <button v-for="c in categories" :key="c._id" type="button" :class="{ actif: mobileCategorie === c._id }" @click="mobileCategorie = c._id">{{ c.nom }}</button>
         </div>
         <div class="mobile-liste">
-          <button v-for="p in produitsMobiles" :key="p._id" type="button" class="mobile-produit" @click="ouvrirMobile(p)">
-            <v-avatar rounded="0" size="64"><v-img v-if="p.photos?.length" :src="assetUrl(p.photos[0])" cover /><v-icon v-else icon="mdi-image-outline" /></v-avatar>
-            <span class="mobile-produit-texte"><strong>{{ p.nom }}</strong><small>{{ nomCategorie(p.categorie) }} · {{ p.prix }} €</small><em :class="{ rupture: !totalStock(p) }">{{ totalStock(p) ? `${totalStock(p)} en stock` : 'Rupture' }}</em></span>
-            <v-icon :icon="p.actif ? 'mdi-eye-outline' : 'mdi-eye-off-outline'" :color="p.actif ? 'success' : undefined" size="small" />
-            <v-icon icon="mdi-dots-vertical" />
-          </button>
+          <article v-for="p in produitsMobiles" :key="p._id" class="mobile-produit">
+            <button type="button" class="mobile-produit-contenu" @click="ouvrirMobile(p)">
+              <v-avatar rounded="0" size="64"><v-img v-if="p.photos?.length" :src="assetUrl(p.photos[0])" cover /><v-icon v-else icon="mdi-image-outline" /></v-avatar>
+              <span class="mobile-produit-texte"><strong>{{ p.nom }}</strong><small>{{ nomCategorie(p.categorie) }} · {{ p.prix }} €</small><em :class="{ rupture: !totalStock(p) }">{{ totalStock(p) ? `${totalStock(p)} en stock` : 'Rupture' }}</em></span>
+            </button>
+            <div class="mobile-produit-actions">
+              <v-btn icon="mdi-pencil-outline" color="primary" variant="text" size="small" :aria-label="`Modifier ${p.nom}`" @click="ouvrirMobile(p)" />
+              <v-btn icon="mdi-delete-outline" color="error" variant="text" size="small" :aria-label="`Supprimer ${p.nom}`" @click="demanderSuppressionMobile(p)" />
+            </div>
+          </article>
           <p v-if="!produitsMobiles.length" class="mobile-vide">Aucun article trouvé.</p>
         </div>
       </div>
@@ -1268,7 +1277,7 @@ async function reordonnerPhotos() {
   .mobile-indicateurs span { min-width: 0; padding: 10px 6px; display: grid; text-align: center; color: #62666c; font-size: .7rem; border-right: 1px solid #e1e3e6; }
   .mobile-indicateurs span:last-child { border: 0; }.mobile-indicateurs strong { color: #111; font: 800 1.2rem var(--font-display); }.mobile-indicateurs .alerte strong { color: #d17800; }
   .mobile-recherche { margin-bottom: 10px; }.mobile-filtres { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }.mobile-filtres button { min-height: 36px; padding: 0 14px; white-space: nowrap; border: 1px solid #d9dce0; border-radius: 18px; background: #fff; font-size: .76rem; }.mobile-filtres button.actif { color: #fff; background: #c80f1a; border-color: #c80f1a; }
-  .mobile-liste { margin-top: 10px; border-top: 1px solid #e1e3e6; }.mobile-produit { width: 100%; min-height: 82px; padding: 9px 2px; display: grid; grid-template-columns: 64px minmax(0,1fr) 24px 28px; gap: 10px; align-items: center; color: inherit; text-align: left; background: #fff; border: 0; border-bottom: 1px solid #e1e3e6; }.mobile-produit-texte { min-width: 0; display: grid; gap: 2px; }.mobile-produit-texte strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .91rem; }.mobile-produit-texte small { color: #6b7077; }.mobile-produit-texte em { width: max-content; padding: 2px 6px; color: #20843a; background: #e6f4e8; font-size: .68rem; font-style: normal; }.mobile-produit-texte em.rupture { color: #c80f1a; background: #fbe8e9; }.mobile-vide,.mobile-note { padding: 24px 4px; color: #6b7077; font-size: .85rem; }
+  .mobile-liste { margin-top: 10px; border-top: 1px solid #e1e3e6; }.mobile-produit { width: 100%; min-height: 82px; padding: 9px 2px; display: grid; grid-template-columns: minmax(0,1fr) 80px; gap: 6px; align-items: center; color: inherit; background: #fff; border-bottom: 1px solid #e1e3e6; }.mobile-produit-contenu { min-width: 0; display: grid; grid-template-columns: 64px minmax(0,1fr); gap: 10px; align-items: center; color: inherit; text-align: left; background: transparent; border: 0; }.mobile-produit-actions { display: grid; grid-template-columns: repeat(2, 36px); gap: 4px; justify-content: end; }.mobile-produit-texte { min-width: 0; display: grid; gap: 2px; }.mobile-produit-texte strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .91rem; }.mobile-produit-texte small { color: #6b7077; }.mobile-produit-texte em { width: max-content; padding: 2px 6px; color: #20843a; background: #e6f4e8; font-size: .68rem; font-style: normal; }.mobile-produit-texte em.rupture { color: #c80f1a; background: #fbe8e9; }.mobile-vide,.mobile-note { padding: 24px 4px; color: #6b7077; font-size: .85rem; }
   .mobile-nav { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; height: calc(66px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); display: grid; grid-template-columns: repeat(3,1fr); background: #fff; border-top: 1px solid #dfe1e4; }.mobile-nav button { display: grid; place-content: center; gap: 1px; color: #777b80; background: transparent; border: 0; font-size: .66rem; }.mobile-nav button.actif { color: #c80f1a; }.mobile-nav .v-icon { margin: auto; }
   .categories-stock { display: grid; grid-template-columns: repeat(3,1fr); padding-bottom: 14px; }.categories-stock button { border-radius: 0; }.stock-produit { border: 1px solid #e0e2e5; border-bottom: 0; }.stock-produit:last-child { border-bottom: 1px solid #e0e2e5; }.stock-produit-tete { width: 100%; min-height: 70px; padding: 10px; display: grid; grid-template-columns: 48px 1fr 28px; gap: 10px; align-items: center; text-align: left; background: #fff; border: 0; }.stock-produit-tete span { display: grid; }.stock-produit-tete small { color: #6b7077; }.stock-tailles { border-top: 1px solid #e0e2e5; }.stock-ligne { min-height: 76px; padding: 9px 13px; display: grid; grid-template-columns: 1fr 44px 72px 44px; align-items: center; gap: 8px; border-bottom: 1px solid #e7e8ea; }.stock-ligne:last-child { border-bottom: 0; }.stock-ligne>strong { font-size: 1.05rem; }.stock-ligne>span { display: grid; justify-items: center; text-align: center; }.stock-ligne input { width: 64px; height: 38px; padding: 0 4px; color: #111; background: #fff; border: 1px solid #cfd2d6; border-radius: 3px; font: 800 1.15rem var(--font-display); text-align: center; }.stock-ligne input:focus { outline: 2px solid rgba(200,15,26,.2); border-color: #c80f1a; }.stock-ligne small { min-height: 14px; color: #777; font-size: .62rem; }.stock-ligne.zero input,.stock-ligne.zero small { color: #c80f1a; }.stock-ligne.dernier input,.stock-ligne.dernier small { color: #d17800; }
   .mobile-resume { margin: 0 0 8px; color: #6b7077; }.mobile-rayon { min-height: 76px; display: grid; grid-template-columns: 30px 1fr 26px 36px; align-items: center; border-bottom: 1px solid #e0e2e5; }.mobile-rayon-contenu { display: grid; gap: 3px; text-align: left; color: inherit; background: none; border: 0; }.mobile-rayon-contenu strong { font-size: 1rem; }.mobile-rayon-contenu small { color: #6b7077; }
