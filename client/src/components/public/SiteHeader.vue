@@ -22,7 +22,8 @@ const menuOuvert = ref(false);
 // Une entrée de menu vise soit une ancre de la page d'accueil (« #tarifs »),
 // soit une page à part (« /boutique »). La seconde doit passer par le routeur :
 // un <a href> rechargerait tout le site pour changer de page.
-const estRoute = (href) => href.startsWith("/");
+const destination = (href) =>
+  href.startsWith("#") ? { path: "/", hash: href } : href;
 
 const logo = computed(() => (props.settings.logo ? assetUrl(props.settings.logo) : ""));
 const nomClub = computed(() => props.settings.nomClub || "CDK-Team");
@@ -48,16 +49,13 @@ watch(menuOuvert, (ouvert) => {
 <template>
   <header class="entete">
     <div class="wrap barre">
-      <a class="marque" href="#accueil" @click="menuOuvert = false">
+      <RouterLink class="marque" :to="{ path: '/', hash: '#accueil' }" @click="menuOuvert = false">
         <img v-if="logo" :src="logo" :alt="nomClub" class="logo" />
         <span class="nom">{{ nomClub }}</span>
-      </a>
+      </RouterLink>
 
       <nav class="liens" aria-label="Navigation principale">
-        <template v-for="item in nav" :key="item.href">
-          <RouterLink v-if="estRoute(item.href)" :to="item.href">{{ item.label }}</RouterLink>
-          <a v-else :href="item.href">{{ item.label }}</a>
-        </template>
+        <RouterLink v-for="item in nav" :key="item.href" :to="destination(item.href)">{{ item.label }}</RouterLink>
       </nav>
 
       <button
@@ -87,20 +85,19 @@ watch(menuOuvert, (ouvert) => {
         <span class="ceinture" aria-hidden="true"></span>
 
         <nav class="panneau-nav">
-          <component
-            :is="estRoute(item.href) ? RouterLink : 'a'"
+          <RouterLink
             v-for="(item, index) in nav"
             :key="item.href"
-            v-bind="estRoute(item.href) ? { to: item.href } : { href: item.href }"
+            :to="destination(item.href)"
             :style="{ '--item-index': index }"
             @click="menuOuvert = false"
           >
             <span class="index">{{ String(index + 1).padStart(2, "0") }}</span>
             <span class="libelle">{{ item.label }}</span>
-          </component>
+          </RouterLink>
         </nav>
 
-        <a class="panneau-cta" href="#inscription" @click="menuOuvert = false">S'inscrire</a>
+        <RouterLink class="panneau-cta" :to="{ path: '/', hash: '#inscription' }" @click="menuOuvert = false">S'inscrire</RouterLink>
       </div>
     </Transition>
   </Teleport>
