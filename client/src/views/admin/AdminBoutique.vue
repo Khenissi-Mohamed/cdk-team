@@ -128,8 +128,15 @@ async function soumettreRayon() {
 }
 
 async function basculerRayon(c, valeur) {
+  const precedent = c.actif;
   c.actif = valeur;
-  await api.put(`/boutique/admin/categories/${c._id}`, { actif: valeur });
+  erreur.value = "";
+  try {
+    await api.put(`/boutique/admin/categories/${c._id}`, { actif: valeur });
+  } catch (err) {
+    c.actif = precedent;
+    erreur.value = err.response?.data?.message || "La visibilité du rayon n'a pas pu être enregistrée.";
+  }
 }
 
 async function reordonnerRayons() {
@@ -532,7 +539,7 @@ async function reordonnerPhotos() {
             <article class="mobile-rayon">
               <span class="poignee"><v-icon icon="mdi-drag-vertical" /></span>
               <button type="button" class="mobile-rayon-contenu" @click="ouvrirEditionRayon(c)"><strong>{{ c.nom }}</strong><small>{{ c.tailles.join(' · ') }} · {{ produits.filter((p) => p.categorie === c._id).length }} articles</small></button>
-              <v-icon :icon="c.actif ? 'mdi-eye-outline' : 'mdi-eye-off-outline'" :color="c.actif ? 'success' : undefined" />
+              <v-btn :icon="c.actif ? 'mdi-eye-outline' : 'mdi-eye-off-outline'" :color="c.actif ? 'success' : undefined" variant="text" size="small" :aria-label="c.actif ? `Masquer ${c.nom}` : `Afficher ${c.nom}`" @click="basculerRayon(c, !c.actif)" />
               <v-btn icon="mdi-dots-vertical" variant="text" size="small" @click="ouvrirEditionRayon(c)" />
             </article>
           </template>
