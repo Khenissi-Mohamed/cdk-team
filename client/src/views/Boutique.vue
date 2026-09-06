@@ -12,6 +12,7 @@
  * page ni perdre son filtre.
  */
 import { ref, computed, onMounted, watch } from "vue";
+import { RouterLink } from "vue-router";
 import api, { assetUrl } from "../services/api";
 import { contactUrl } from "../utils/links";
 import { trackClick } from "../composables/useTracking";
@@ -147,6 +148,11 @@ const waHref = computed(() => contactUrl("whatsapp", settings.value.whatsapp));
 
     <SiteFooter :settings="settings" />
 
+    <RouterLink class="sortie-boutique" to="/" aria-label="Retourner à l'accueil du club">
+      <span aria-hidden="true">←</span>
+      Retour au club
+    </RouterLink>
+
     <!-- La fiche -->
     <Teleport to="body">
       <div v-if="produitOuvert" class="fiche-fond" @click.self="fermer">
@@ -257,6 +263,38 @@ const waHref = computed(() => contactUrl("whatsapp", settings.value.whatsapp));
   overflow-x: hidden;
 }
 
+.sortie-boutique {
+  position: fixed;
+  z-index: 20;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  min-height: 46px;
+  padding: 0.7rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--on-primary);
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.sortie-boutique span {
+  font-family: Arial, sans-serif;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.sortie-boutique:hover {
+  background: var(--primary-strong);
+}
+
 .boutique {
   background: var(--surface);
   padding-top: var(--space-section);
@@ -264,6 +302,7 @@ const waHref = computed(() => contactUrl("whatsapp", settings.value.whatsapp));
 }
 
 @media (max-width: 640px) {
+  .sortie-boutique { right: .75rem; bottom: max(.75rem, env(safe-area-inset-bottom)); min-height: 44px; }
   .boutique { padding-top: 1.25rem; padding-bottom: 2.5rem; }
   .section-head { margin-bottom: 0.55rem; }
   .section-titre { max-width: 12ch; margin-bottom: 0.65rem; font-size: clamp(2rem, 10vw, 2.75rem); line-height: 0.98; }
