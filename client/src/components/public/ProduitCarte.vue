@@ -26,6 +26,10 @@ const taillesDisponibles = computed(
   () => (props.produit.stock ?? []).filter((s) => s.quantite > 0).length
 );
 
+const taillesResume = computed(() =>
+  (props.produit.stock ?? []).filter((s) => s.quantite > 0).map((s) => s.taille).join(", ")
+);
+
 const disponibilite = computed(() => {
   if (epuise.value) return "Aucune taille disponible";
   const n = taillesDisponibles.value;
@@ -47,7 +51,7 @@ const disponibilite = computed(() => {
 
     <div class="pied">
       <h3>{{ produit.nom }}</h3>
-      <span class="dispo">{{ disponibilite }}</span>
+      <span class="dispo"><span class="resume-tailles">{{ taillesResume }}</span><span class="resume-compte">{{ disponibilite }}</span></span>
       <span class="prix">{{ produit.prix }}&nbsp;€</span>
     </div>
   </article>
@@ -130,6 +134,17 @@ const disponibilite = computed(() => {
 .dispo {
   font-size: 0.74rem;
   color: var(--text-muted);
+}
+
+.resume-tailles { display: none; }
+
+@media (max-width: 640px) {
+  .pied { gap: 0.22rem; padding-top: 0.5rem; }
+  .pied h3 { font-size: 0.86rem; }
+  .prix { order: 2; margin-top: 0; font-size: 1rem; }
+  .dispo { order: 3; color: #79bd6f; line-height: 1.25; }
+  .resume-tailles { display: inline; }
+  .resume-compte { display: none; }
 }
 
 .prix {

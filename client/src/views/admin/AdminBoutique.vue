@@ -30,6 +30,12 @@ const categories = ref([]);
 const produits = ref([]);
 const erreur = ref("");
 const chargement = ref(true);
+const mobileOnglet = ref("catalogue");
+const mobileCategorie = ref("tout");
+const stockCategorie = ref("tout");
+const mobileEdition = ref(false);
+const etapeFiche = ref(1);
+const stockOuvertId = ref(null);
 
 const vue = ref(localStorage.getItem(CLE_VUE) === "fiches" ? "fiches" : "tableau");
 watch(vue, (v) => localStorage.setItem(CLE_VUE, v));
@@ -248,6 +254,18 @@ const listeFiltree = computed(() => {
   );
 });
 
+const produitsMobiles = computed(() =>
+  listeFiltree.value.filter(
+    (produit) => mobileCategorie.value === "tout" || produit.categorie === mobileCategorie.value
+  )
+);
+
+const produitsStockMobiles = computed(() =>
+  produits.value.filter(
+    (produit) => stockCategorie.value === "tout" || produit.categorie === stockCategorie.value
+  )
+);
+
 const taillesFiche = computed(() => taillesDe(fiche.categorie));
 
 // La grille de tailles suit le rayon : en changer doit refaire les lignes de
@@ -312,6 +330,30 @@ function ouvrirDansFiche(p) {
   vue.value = "fiches";
 }
 
+function ouvrirMobile(p, etape = 1) {
+  remplirFiche(p);
+  etapeFiche.value = etape;
+  mobileEdition.value = true;
+}
+
+function nouvelArticleMobile() {
+  nouvelArticle();
+  etapeFiche.value = 1;
+  mobileEdition.value = true;
+}
+
+function fermerMobile() {
+  mobileEdition.value = false;
+}
+
+function ajusterStock(p, taille, delta) {
+  changerQuantite(p, taille, quantite(p, taille) + delta);
+}
+
+const totalArticlesVisibles = computed(() => produits.value.filter((p) => p.actif).length);
+const totalRuptures = computed(() => produits.value.filter((p) => totalStock(p) === 0).length);
+const totalMasques = computed(() => produits.value.filter((p) => !p.actif).length);
+
 function ajouterCaracteristique() {
   if (fiche.caracteristiques.length >= 10) return;
   fiche.caracteristiques.push({ cle: "", valeur: "" });
@@ -365,6 +407,7 @@ async function confirmerSuppressionArticle() {
   const suivant = produits.value[0];
   if (suivant) remplirFiche(suivant);
   else nouvelArticle();
+  mobileEdition.value = false;
 }
 
 /* ------------------------------------------------------------------ *
@@ -415,6 +458,97 @@ async function reordonnerPhotos() {
 </script>
 
 <template>
+  <section class="boutique-mobile">
+    <header class="mobile-entete">
+      <div><span>BOUTIQUE</span><h1>{{ mobileOnglet === 'catalogue' ? 'Catalogue' : mobileOnglet === 'stock' ? 'Stock express' : 'Rayons' }}</h1></div>
+      <v-btn icon="mdi-plus" color="primary" size="small" :aria-label="mobileOnglet === 'rayons' ? 'Nouveau rayon' : 'Nouvel article'" @click="mobileOnglet === 'rayons' ? ouvrirCreationRayon() : nouvelArticleMobile()" />
+    </header>
+
+    <v-alert v-if="erreur" type="error" variant="tonal" density="compact" class="mx-4 mb-3">{{ erreur }}</v-alert>
+    <v-skeleton-loader v-if="chargement" type="list-item-avatar-three-line@4" />
+
+    <template v-else>
+      <div v-if="mobileOnglet === 'catalogue'" class="mobile-vue">
+        <div class="mobile-indicateurs">
+          <span><strong>{{ produits.length }}</strong> articles</span>
+          <span class="alerte"><strong>{{ totalRuptures }}</strong> en rupture</span>
+          <span><strong>{{ totalMasques }}</strong> masqués</span>
+        </div>
+        <v-text-field v-model="recherche" density="compact" hide-details variant="outlined" placeholder="Rechercher un article" prepend-inner-icon="mdi-magnify" clearable class="mobile-recherche" />
+        <div class="mobile-filtres">
+          <button type="button" :class="{ actif: mobileCategorie === 'tout' }" @click="mobileCategorie = 'tout'">Tous</button>
+          <button v-for="c in categories" :key="c._id" type="button" :class="{ actif: mobileCategorie === c._id }" @click="mobileCategorie = c._id">{{ c.nom }}</button>
+        </div>
+        <div class="mobile-liste">
+          <button v-for="p in produitsMobiles" :key="p._id" type="button" class="mobile-produit" @click="ouvrirMobile(p)">
+            <v-avatar rounded="0" size="64"><v-img v-if="p.photos?.length" :src="assetUrl(p.photos[0])" cover /><v-icon v-else icon="mdi-image-outline" /></v-avatar>
+            <span class="mobile-produit-texte"><strong>{{ p.nom }}</strong><small>{{ nomCategorie(p.categorie) }} · {{ p.prix }} €</small><em :class="{ rupture: !totalStock(p) }">{{ totalStock(p) ? `${totalStock(p)} en stock` : 'Rupture' }}</em></span>
+            <v-icon :icon="p.actif ? 'mdi-eye-outline' : 'mdi-eye-off-outline'" :color="p.actif ? 'success' : undefined" size="small" />
+            <v-icon icon="mdi-dots-vertical" />
+          </button>
+          <p v-if="!produitsMobiles.length" class="mobile-vide">Aucun article trouvé.</p>
+        </div>
+      </div>
+
+      <div v-else-if="mobileOnglet === 'stock'" class="mobile-vue stock-mobile">
+        <div class="mobile-filtres categories-stock">
+          <button type="button" :class="{ actif: stockCategorie === 'tout' }" @click="stockCategorie = 'tout'">Tous</button>
+          <button v-for="c in categories" :key="c._id" type="button" :class="{ actif: stockCategorie === c._id }" @click="stockCategorie = c._id">{{ c.nom }}</button>
+        </div>
+        <article v-for="p in produitsStockMobiles" :key="p._id" class="stock-produit" :class="{ ouvert: stockOuvertId === p._id }">
+          <button type="button" class="stock-produit-tete" @click="stockOuvertId = stockOuvertId === p._id ? null : p._id">
+            <v-avatar rounded="0" size="48"><v-img v-if="p.photos?.length" :src="assetUrl(p.photos[0])" cover /><v-icon v-else icon="mdi-image-outline" /></v-avatar>
+            <span><strong>{{ p.nom }}</strong><small>{{ totalStock(p) }} unités</small></span>
+            <v-icon :icon="stockOuvertId === p._id ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+          </button>
+          <div v-if="stockOuvertId === p._id" class="stock-tailles">
+            <div v-for="t in taillesDe(p.categorie)" :key="t" class="stock-ligne" :class="{ zero: quantite(p, t) === 0, dernier: quantite(p, t) === 1 }">
+              <strong>{{ t }}</strong>
+              <v-btn icon="mdi-minus" variant="outlined" size="small" :disabled="quantite(p, t) === 0" @click="ajusterStock(p, t, -1)" />
+              <span><b>{{ quantite(p, t) }}</b><small>{{ quantite(p, t) === 0 ? 'Rupture' : quantite(p, t) === 1 ? 'Dernier' : '' }}</small></span>
+              <v-btn icon="mdi-plus" variant="outlined" size="small" @click="ajusterStock(p, t, 1)" />
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div v-else class="mobile-vue rayons-mobile">
+        <p class="mobile-resume">{{ categories.length }} rayons · {{ produits.length }} articles</p>
+        <draggable v-model="categories" item-key="_id" handle=".poignee" @end="reordonnerRayons">
+          <template #item="{ element: c }">
+            <article class="mobile-rayon">
+              <span class="poignee"><v-icon icon="mdi-drag-vertical" /></span>
+              <button type="button" class="mobile-rayon-contenu" @click="ouvrirEditionRayon(c)"><strong>{{ c.nom }}</strong><small>{{ c.tailles.join(' · ') }} · {{ produits.filter((p) => p.categorie === c._id).length }} articles</small></button>
+              <v-icon :icon="c.actif ? 'mdi-eye-outline' : 'mdi-eye-off-outline'" :color="c.actif ? 'success' : undefined" />
+              <v-btn icon="mdi-dots-vertical" variant="text" size="small" @click="ouvrirEditionRayon(c)" />
+            </article>
+          </template>
+        </draggable>
+      </div>
+    </template>
+
+    <nav class="mobile-nav" aria-label="Navigation boutique">
+      <button v-for="onglet in [{ id: 'catalogue', icon: 'mdi-view-grid-outline', label: 'Catalogue' }, { id: 'stock', icon: 'mdi-archive-outline', label: 'Stock' }, { id: 'rayons', icon: 'mdi-folder-outline', label: 'Rayons' }]" :key="onglet.id" type="button" :class="{ actif: mobileOnglet === onglet.id }" @click="mobileOnglet = onglet.id"><v-icon :icon="onglet.icon" /><span>{{ onglet.label }}</span></button>
+    </nav>
+
+    <div v-if="mobileEdition" class="mobile-edition">
+      <header><v-btn icon="mdi-arrow-left" variant="text" aria-label="Retour" @click="fermerMobile" /><strong>{{ fiche.id ? fiche.nom : 'Nouvel article' }}</strong><v-btn v-if="fiche.id" icon="mdi-dots-vertical" variant="text" @click="dialogSuppressionArticle = true" /></header>
+      <div class="etapes"><button v-for="(label, index) in ['Infos', 'Stock', 'Photos', 'Publication']" :key="label" type="button" :class="{ actif: etapeFiche === index + 1 }" @click="etapeFiche = index + 1"><b>{{ index + 1 }}</b><span>{{ label }}</span></button></div>
+      <main>
+        <section v-if="etapeFiche === 1" class="edition-section">
+          <h2>Informations de base</h2><v-text-field v-model="fiche.nom" label="Nom de l'article" /><v-select v-model="fiche.categorie" :items="categories" item-title="nom" item-value="_id" label="Rayon" @update:model-value="synchroniserStockFiche" /><v-text-field v-model.number="fiche.prix" label="Prix" type="number" min="0" suffix="€" /><v-textarea v-model="fiche.description" label="Description" rows="4" />
+          <div class="edition-titre"><h3>Caractéristiques</h3><v-btn icon="mdi-plus" variant="outlined" size="small" @click="ajouterCaracteristique" /></div>
+          <div v-for="(c, i) in fiche.caracteristiques" :key="i" class="ligne-carac mb-2"><v-text-field v-model="c.cle" label="Intitulé" density="compact" hide-details /><v-text-field v-model="c.valeur" label="Valeur" density="compact" hide-details /><v-btn icon="mdi-close" variant="text" size="small" @click="fiche.caracteristiques.splice(i, 1)" /></div>
+        </section>
+        <section v-else-if="etapeFiche === 2" class="edition-section"><h2>Stock par taille</h2><div class="stock-tailles"><div v-for="s in fiche.stock" :key="s.taille" class="stock-ligne" :class="{ zero: !s.quantite, dernier: s.quantite === 1 }"><strong>{{ s.taille }}</strong><v-btn icon="mdi-minus" variant="outlined" size="small" :disabled="!s.quantite" @click="s.quantite = Math.max(0, s.quantite - 1)" /><span><b>{{ s.quantite }}</b><small>{{ !s.quantite ? 'Rupture' : s.quantite === 1 ? 'Dernier' : '' }}</small></span><v-btn icon="mdi-plus" variant="outlined" size="small" @click="s.quantite += 1" /></div></div></section>
+        <section v-else-if="etapeFiche === 3" class="edition-section"><h2>Photos</h2><p v-if="!fiche.id" class="mobile-note">Enregistrez d'abord l'article pour ajouter ses photos.</p><template v-else><draggable v-model="fiche.photos" item-key="self" class="photos-mobile" @end="reordonnerPhotos"><template #item="{ element: url, index }"><div class="photo-mobile"><b>{{ index + 1 }}</b><img :src="assetUrl(url)" alt="" /><v-btn icon="mdi-delete-outline" color="error" variant="text" @click="retirerPhoto(url)" /></div></template></draggable><input ref="champPhotos" type="file" accept="image/png,image/jpeg,image/webp" multiple class="d-none" @change="surChoixPhotos" /><v-btn block variant="outlined" prepend-icon="mdi-image-plus" :loading="envoiPhotos" @click="choisirPhotos">Ajouter des photos</v-btn></template></section>
+        <section v-else class="edition-section publication-mobile"><h2>Publication</h2><v-switch v-model="fiche.actif" color="success" label="Visible sur le site" /><v-switch v-model="fiche.misEnAvant" color="success" label="Afficher sur l'accueil" /><div class="apercu-mobile"><v-avatar rounded="0" size="68"><v-img v-if="fiche.photos.length" :src="assetUrl(fiche.photos[0])" cover /></v-avatar><span><strong>{{ fiche.nom || 'Nouvel article' }}</strong><small>{{ fiche.prix }} € · {{ totalStock(fiche) }} en stock</small></span></div></section>
+      </main>
+      <footer><v-btn v-if="etapeFiche > 1" variant="outlined" @click="etapeFiche -= 1">Précédent</v-btn><span></span><v-btn v-if="etapeFiche < 4" color="primary" @click="etapeFiche += 1">Suivant</v-btn><v-btn v-else color="primary" :loading="enregistrementFiche" @click="enregistrerFiche">Enregistrer</v-btn></footer>
+    </div>
+  </section>
+
+  <div class="boutique-desktop">
   <div class="tete">
     <div>
       <h1 class="text-h5 mb-1">Boutique</h1>
@@ -825,6 +959,7 @@ async function reordonnerPhotos() {
       </v-card>
     </div>
   </template>
+  </div>
 
   <!-- Dialogue rayon -->
   <AppDialog
@@ -1114,6 +1249,26 @@ async function reordonnerPhotos() {
   position: absolute;
   top: 2px;
   right: 2px;
+}
+
+.boutique-mobile { display: none; }
+
+@media (max-width: 700px) {
+  .boutique-desktop { display: none; }
+  .boutique-mobile { display: block; min-height: calc(100dvh - 64px); margin: -16px; padding-bottom: 76px; background: #fff; color: #111; }
+  .mobile-entete { min-height: 78px; padding: 15px 18px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e3e5e8; }
+  .mobile-entete span { color: #c80f1a; font-size: .65rem; font-weight: 800; letter-spacing: .12em; }
+  .mobile-entete h1 { margin: 1px 0 0; font: 800 1.65rem/1.05 var(--font-display); }
+  .mobile-vue { padding: 14px 16px 20px; }
+  .mobile-indicateurs { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid #e1e3e6; margin-bottom: 12px; }
+  .mobile-indicateurs span { min-width: 0; padding: 10px 6px; display: grid; text-align: center; color: #62666c; font-size: .7rem; border-right: 1px solid #e1e3e6; }
+  .mobile-indicateurs span:last-child { border: 0; }.mobile-indicateurs strong { color: #111; font: 800 1.2rem var(--font-display); }.mobile-indicateurs .alerte strong { color: #d17800; }
+  .mobile-recherche { margin-bottom: 10px; }.mobile-filtres { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }.mobile-filtres button { min-height: 36px; padding: 0 14px; white-space: nowrap; border: 1px solid #d9dce0; border-radius: 18px; background: #fff; font-size: .76rem; }.mobile-filtres button.actif { color: #fff; background: #c80f1a; border-color: #c80f1a; }
+  .mobile-liste { margin-top: 10px; border-top: 1px solid #e1e3e6; }.mobile-produit { width: 100%; min-height: 82px; padding: 9px 2px; display: grid; grid-template-columns: 64px minmax(0,1fr) 24px 28px; gap: 10px; align-items: center; color: inherit; text-align: left; background: #fff; border: 0; border-bottom: 1px solid #e1e3e6; }.mobile-produit-texte { min-width: 0; display: grid; gap: 2px; }.mobile-produit-texte strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .91rem; }.mobile-produit-texte small { color: #6b7077; }.mobile-produit-texte em { width: max-content; padding: 2px 6px; color: #20843a; background: #e6f4e8; font-size: .68rem; font-style: normal; }.mobile-produit-texte em.rupture { color: #c80f1a; background: #fbe8e9; }.mobile-vide,.mobile-note { padding: 24px 4px; color: #6b7077; font-size: .85rem; }
+  .mobile-nav { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; height: calc(66px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); display: grid; grid-template-columns: repeat(3,1fr); background: #fff; border-top: 1px solid #dfe1e4; }.mobile-nav button { display: grid; place-content: center; gap: 1px; color: #777b80; background: transparent; border: 0; font-size: .66rem; }.mobile-nav button.actif { color: #c80f1a; }.mobile-nav .v-icon { margin: auto; }
+  .categories-stock { display: grid; grid-template-columns: repeat(3,1fr); padding-bottom: 14px; }.categories-stock button { border-radius: 0; }.stock-produit { border: 1px solid #e0e2e5; border-bottom: 0; }.stock-produit:last-child { border-bottom: 1px solid #e0e2e5; }.stock-produit-tete { width: 100%; min-height: 70px; padding: 10px; display: grid; grid-template-columns: 48px 1fr 28px; gap: 10px; align-items: center; text-align: left; background: #fff; border: 0; }.stock-produit-tete span { display: grid; }.stock-produit-tete small { color: #6b7077; }.stock-tailles { border-top: 1px solid #e0e2e5; }.stock-ligne { min-height: 76px; padding: 9px 13px; display: grid; grid-template-columns: 1fr 44px 64px 44px; align-items: center; gap: 10px; border-bottom: 1px solid #e7e8ea; }.stock-ligne:last-child { border-bottom: 0; }.stock-ligne>strong { font-size: 1.05rem; }.stock-ligne>span { display: grid; text-align: center; }.stock-ligne b { font: 800 1.45rem var(--font-display); }.stock-ligne small { min-height: 14px; color: #777; font-size: .62rem; }.stock-ligne.zero b,.stock-ligne.zero small { color: #c80f1a; }.stock-ligne.dernier b,.stock-ligne.dernier small { color: #d17800; }
+  .mobile-resume { margin: 0 0 8px; color: #6b7077; }.mobile-rayon { min-height: 76px; display: grid; grid-template-columns: 30px 1fr 26px 36px; align-items: center; border-bottom: 1px solid #e0e2e5; }.mobile-rayon-contenu { display: grid; gap: 3px; text-align: left; color: inherit; background: none; border: 0; }.mobile-rayon-contenu strong { font-size: 1rem; }.mobile-rayon-contenu small { color: #6b7077; }
+  .mobile-edition { position: fixed; z-index: 40; inset: 0; display: grid; grid-template-rows: 58px 68px minmax(0,1fr) 70px; background: #fff; color: #111; }.mobile-edition>header { display: grid; grid-template-columns: 48px 1fr 48px; align-items: center; border-bottom: 1px solid #e1e3e6; }.mobile-edition>header strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; }.etapes { display: grid; grid-template-columns: repeat(4,1fr); padding: 8px 10px; border-bottom: 1px solid #e1e3e6; }.etapes button { display: grid; justify-items: center; gap: 2px; color: #74787d; background: none; border: 0; font-size: .62rem; }.etapes b { width: 25px; height: 25px; display: grid; place-items: center; border: 1px solid #cfd2d6; border-radius: 50%; }.etapes button.actif { color: #c80f1a; }.etapes button.actif b { color: #fff; background: #c80f1a; border-color: #c80f1a; }.mobile-edition>main { overflow-y: auto; padding: 18px 16px 28px; }.edition-section h2 { margin: 0 0 18px; font: 800 1.25rem var(--font-display); }.edition-titre { margin: 4px 0 12px; display: flex; justify-content: space-between; align-items: center; }.edition-titre h3 { margin: 0; font-size: .9rem; }.mobile-edition .ligne-carac { grid-template-columns: 1fr 1fr 36px; }.mobile-edition>footer { padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: auto 1fr auto; gap: 10px; border-top: 1px solid #dfe1e4; }.mobile-edition>footer .v-btn { min-width: 126px; height: 48px; }.photos-mobile { display: grid; gap: 8px; margin-bottom: 12px; }.photo-mobile { min-height: 70px; padding: 7px 4px 7px 10px; display: grid; grid-template-columns: 24px 58px 1fr; align-items: center; border: 1px solid #e0e2e5; }.photo-mobile img { width: 58px; height: 58px; object-fit: cover; }.photo-mobile .v-btn { justify-self: end; }.publication-mobile .v-switch { border-bottom: 1px solid #e1e3e6; }.apercu-mobile { margin-top: 20px; padding: 10px; display: flex; gap: 12px; align-items: center; border: 1px solid #e0e2e5; }.apercu-mobile span { display: grid; }.apercu-mobile small { color: #6b7077; }
 }
 
 @media (max-width: 600px) {
