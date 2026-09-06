@@ -253,14 +253,36 @@ const waHref = computed(() => contactUrl("whatsapp", settings.value.whatsapp));
 </template>
 
 <style scoped>
+.public-page {
+  overflow-x: hidden;
+}
+
 .boutique {
   background: var(--surface);
-  padding-top: calc(var(--header-height) + var(--space-section));
+  padding-top: var(--space-section);
   padding-bottom: var(--space-section);
 }
 
+@media (max-width: 640px) {
+  .boutique { padding-top: 1.25rem; padding-bottom: 2.5rem; }
+  .section-head { margin-bottom: 0.55rem; }
+  .section-titre { max-width: 12ch; margin-bottom: 0.65rem; font-size: clamp(2rem, 10vw, 2.75rem); line-height: 0.98; }
+  .intro { margin-bottom: 1rem; font-size: 0.86rem; line-height: 1.45; }
+  .filtres { flex-wrap: nowrap; margin: 0 calc(var(--gutter) * -1) 1.1rem; padding: 0 var(--gutter) 0.2rem; overflow-x: auto; scrollbar-width: none; }
+  .filtre { flex: none; min-height: 38px; padding: 0.45rem 0.8rem; letter-spacing: 0.04em; }
+  .grille { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem 0.65rem; }
+  .fiche-fond { padding: 0; background: var(--surface-alt); backdrop-filter: none; }
+  .fiche { min-height: 100dvh; max-width: none; border: 0; }
+  .fermer { position: fixed; top: max(0.7rem, env(safe-area-inset-top)); left: 0.7rem; right: auto; width: 44px; height: 44px; border-radius: 50%; background: rgba(10,10,11,.78); }
+  .fiche-corps { padding: 0 0 calc(1.5rem + env(safe-area-inset-bottom)); gap: 0; }
+  .galerie { gap: 0.55rem; }.galerie-principale { aspect-ratio: 1 / 1; border: 0; }.vignettes { flex-wrap: nowrap; padding: 0 var(--gutter); overflow-x: auto; }.vignette { flex: 0 0 58px; }
+  .fiche-texte { padding: 1.15rem var(--gutter) 0; }.fiche-categorie { margin-bottom: 0.35rem; }.fiche-texte h2 { font-size: 1.75rem; }.fiche-prix { font-size: 1.55rem; }.fiche-desc { font-size: .88rem; line-height: 1.5; }.caracteristiques { margin-bottom: 1.15rem; }.caracteristiques li { font-size: .77rem; }.etiquette { align-items: flex-start; flex-direction: column; gap: .2rem; }.tailles { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .4rem; }.taille { min-width: 0; padding: .5rem .25rem; }.contact { margin-top: .2rem; padding-top: 1.2rem; }.contact-note { color: var(--neutral-300); }.contact-liens { display: grid; grid-template-columns: 1fr; }.contact-liens a { min-height: 48px; }
+}
+
 .intro {
+  width: 100%;
   max-width: var(--content-narrow);
+  overflow-wrap: anywhere;
   margin: 0 0 2rem;
   font-size: 1.02rem;
   line-height: 1.65;
