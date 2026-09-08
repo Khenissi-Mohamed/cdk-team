@@ -16,7 +16,11 @@ Vérifier après publication :
 - Après chargement, chaque page publique possède une seule canonique correspondant à son chemin, sans paramètres ni fragment.
 - Les routes administratives portent `noindex, nofollow` après exécution du JavaScript ; elles restent protégées par l'authentification existante.
 
-Le contenu public dépend toujours du rendu Vue et de l'API. Aucun prérendu ou rendu serveur n'est ajouté par cette modification. Les aperçus sociaux des pages secondaires utilisent encore les métadonnées initiales communes.
+L'accueil est prérendu dans `dist/home.html` avec les données publiques récupérées à chaque build : mêmes composants Vue, planning, tarifs, coachs et documents. La route Nginx exacte `/` sert ce fichier (voir `nginx.conf.example`). Les autres routes utilisent toujours le shell Vue. La canonique de l'accueil est présente dans le HTML initial.
+
+Le navigateur initialise l'accueil avec ce contenu puis recharge l'API pour afficher les données à jour. Après modification du contenu dans l'administration, relancer le déploiement client pour actualiser également le HTML prérendu. Le build Docker invalide son cache de compilation à chaque déploiement pour récupérer les nouvelles données. Si l'API échoue, le build s'arrête avant publication. En local, le prérendu est ignoré si `VITE_API_URL` n'est pas défini.
+
+Les aperçus sociaux des pages secondaires utilisent encore les métadonnées initiales communes. L'adresse complète et les coordonnées du club restent à renseigner dans l'administration.
 
 ## Google Search Console
 
