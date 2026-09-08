@@ -21,7 +21,7 @@ const props = defineProps({
 });
 
 const root = ref(null);
-const current = ref(0);
+const current = ref(import.meta.env.SSR ? props.to : 0);
 let frame = null;
 
 const formatted = computed(() =>

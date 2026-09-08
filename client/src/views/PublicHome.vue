@@ -15,12 +15,16 @@ import ScrollProgress from "../components/motion/ScrollProgress.vue";
 import SiteHeader from "../components/public/SiteHeader.vue";
 import SiteFooter from "../components/public/SiteFooter.vue";
 
-const settings = ref({});
-const cours = ref([]);
-const coachs = ref([]);
-const tarifs = ref([]);
-const documents = ref([]);
-const produits = ref([]);
+const props = defineProps({ initialData: { type: Object, default: () => ({}) } });
+const initial = typeof document === "undefined"
+  ? props.initialData
+  : JSON.parse(document.getElementById("home-data")?.textContent || "{}");
+const settings = ref(initial.settings ?? {});
+const cours = ref(initial.cours ?? []);
+const coachs = ref(initial.coachs ?? []);
+const tarifs = ref(initial.tarifs ?? []);
+const documents = ref(initial.documents ?? []);
+const produits = ref(initial.produits ?? []);
 
 // Contexte unique passé à toutes les sections : une section ne fait jamais son
 // propre appel réseau, sinon l'ordre des sections changerait le nombre de

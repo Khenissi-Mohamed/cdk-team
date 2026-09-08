@@ -19,6 +19,12 @@ server {
     root /var/www/cdk-team/dist;
     index index.html;
 
+    # Accueil prérendu ; les autres routes conservent le shell Vue commun.
+    location = / {
+        try_files /home.html /index.html;
+        add_header Cache-Control "no-cache";
+    }
+
     # SPA (Vue Router en mode history) : toute route inconnue retombe sur
     # index.html, sinon un refresh sur /mentions-legales par ex. donne 404.
     location / {
