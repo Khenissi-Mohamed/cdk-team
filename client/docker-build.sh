@@ -24,4 +24,4 @@ if [ -z "${VITE_API_URL:-}" ]; then
 fi
 
 echo "== Build client (VITE_API_URL=$VITE_API_URL) =="
-docker build --build-arg VITE_API_URL="$VITE_API_URL" -t cdk-team-client .
+docker build --build-arg VITE_API_URL="$VITE_API_URL" --build-arg PRERENDER_BUILD_ID="$(date +%s)" -t cdk-team-client .

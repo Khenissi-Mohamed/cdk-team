@@ -18,6 +18,7 @@ COPY . .
 
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
+ARG PRERENDER_BUILD_ID
 
 RUN npm run build
 # → produit /app/dist, extrait ensuite via `docker cp` (voir deploy.sh)
