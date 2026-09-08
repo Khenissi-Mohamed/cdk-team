@@ -1,7 +1,7 @@
 const origin = "https://team-cdk.fr";
 const pages = {
   "/": {
-    title: "CDK Team Sevran – Club de jiu-jitsu brésilien",
+    title: "CDK Team – JJB à Sevran | Jiu-jitsu brésilien",
     description: "Découvrez CDK Team à Sevran : jiu-jitsu brésilien, gi et no-gi, adultes et enfants. Consultez les horaires, tarifs et modalités d'inscription.",
   },
   "/boutique": {

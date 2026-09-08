@@ -2,6 +2,13 @@
 
 Domaine public : https://team-cdk.fr/
 
+Recherches cibles : `cdk jjb`, `cdk sevran`, `cdk`, `cdk team`, `jjb sevran`.
+Le titre de l'accueil associe le nom du club, JJB, Sevran et le nom complet de la discipline. Les données WebSite identifient le nom du site ; elles ne garantissent pas une position dans Google.
+
+Dans Search Console, suivre chaque requête dans Performances / Résultats de recherche, avec le filtre de page `https://team-cdk.fr/` : impressions, clics et position moyenne, en conservant les mêmes filtres de pays et d'appareil pour comparer. Attendre des données après la nouvelle exploration avant de conclure sur les effets.
+
+Actions externes restantes (comptes du club nécessaires) : vérifier et actualiser le lien du site sur la fiche Google, Facebook, Instagram et Smoothcomp ; demander aux partenaires et à la mairie d'actualiser leurs liens vers le domaine officiel. Aucun de ces comptes n'a été modifié par le déploiement.
+
 ## Publication
 
 Les modifications doivent être transférées sur le VPS avant publication.
@@ -12,7 +19,7 @@ Vérifier après publication :
 
 - `/robots.txt` renvoie un fichier texte qui annonce le sitemap.
 - `/sitemap.xml` renvoie le XML des quatre pages publiques.
-- Le titre de l'accueil est « CDK Team Sevran – Club de jiu-jitsu brésilien ».
+- Le titre de l'accueil est « CDK Team – JJB à Sevran | Jiu-jitsu brésilien ».
 - Après chargement, chaque page publique possède une seule canonique correspondant à son chemin, sans paramètres ni fragment.
 - Les routes administratives portent `noindex, nofollow` après exécution du JavaScript ; elles restent protégées par l'authentification existante.
 
