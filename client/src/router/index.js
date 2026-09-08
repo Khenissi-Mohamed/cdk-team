@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuth } from "../composables/useAuth";
+import { updateSeo } from "../utils/seo";
 
 const routes = [
   {
@@ -68,6 +69,10 @@ router.beforeEach((to) => {
   if (to.meta.requiresAuth && !isAuthenticated()) {
     return { name: "admin-login", query: { redirect: to.fullPath } };
   }
+});
+
+router.afterEach((to, from, failure) => {
+  if (!failure) updateSeo(to);
 });
 
 export default router;
