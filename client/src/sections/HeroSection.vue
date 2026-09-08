@@ -52,7 +52,7 @@ const surtitre = computed(() =>
 
         <p v-reveal="{ variant: 'up', delay: 300 }" class="hero-texte">{{ hero.texte }}</p>
         <p v-if="ville" class="hero-texte">
-          Club de jiu-jitsu brésilien (JJB) à {{ ville }}.
+          {{ hero.titre || data.settings.nomClub }} : club de jiu-jitsu brésilien (JJB) à {{ ville }}.
           Retrouvez les cours, les horaires et les informations pour vous inscrire ci-dessous.
         </p>
 

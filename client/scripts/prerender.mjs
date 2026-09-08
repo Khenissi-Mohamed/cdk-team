@@ -60,6 +60,17 @@ try {
   for (const [scope] of content.matchAll(/data-v-[a-f0-9]+/g)) {
     if (!css.includes(scope)) throw new Error(`Prérendu : style manquant pour ${scope}`);
   }
+  const website = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": "https://team-cdk.fr/#website",
+    name: "CDK Team",
+    alternateName: ["Team CDK", "CDK", "team-cdk.fr"],
+    url: "https://team-cdk.fr/",
+    inLanguage: "fr-FR",
+    publisher: { "@id": "https://team-cdk.fr/#club" },
+  };
+  html = html.replace("</head>", `<script type="application/ld+json">${JSON.stringify(website)}</script>\n</head>`);
   await writeFile("dist/home.html", html);
   console.log(`Accueil prérendu : ${content.length} caractères de HTML, ${data.cours.length} cours.`);
 } finally {
