@@ -14,7 +14,9 @@
  * un projet React, Svelte ou vanilla — seul `directives.js` est spécifique.
  */
 
-const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+const reducedMotionQuery = typeof window === "undefined"
+  ? { matches: true }
+  : window.matchMedia("(prefers-reduced-motion: reduce)");
 
 export function prefersReducedMotion() {
   return reducedMotionQuery.matches;
